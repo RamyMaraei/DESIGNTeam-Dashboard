@@ -296,24 +296,30 @@
     });
   }
 
-  function drawTypeBar(data){
-    const byType = {};
-    data.forEach(r=>{
-      const k = canonicalType(r.type) || 'Unknown';
-      byType[k]=(byType[k]||0)+normalizeQty(r.qty);
-    });
-    const cats = Object.keys(byType), vals = cats.map(k=>byType[k]);
-    const colors = cats.map(t=> colorForType(t));
-    const opts = {
-      chart:{type:'bar', height:350, foreColor:CHART_BASE},
-      colors,
-      series:[{name:'Quantity', data:vals}],
-      xaxis:{ categories: cats },
-      dataLabels:{enabled:false}
-    };
-    if(typeBarChart){ typeBarChart.destroy(); typeBarChart=null; }
-    typeBarChart = new ApexCharts(document.querySelector('#typeBar'), opts); typeBarChart.render();
-  }
+function drawTypeBar(data){
+  const byType = {};
+  data.forEach(r=>{
+    const k = canonicalType(r.type) || 'Unknown';
+    byType[k] = (byType[k] || 0) + normalizeQty(r.qty);
+  });
+
+  const cats = Object.keys(byType);
+  const vals = cats.map(k => byType[k]);
+
+  const opts = {
+    chart:{ type:'bar', height:350, foreColor: CHART_BASE, toolbar:{show:false} },
+    colors:[HEAD_RED],                 // لون أحمر موحد
+    plotOptions:{ bar:{ distributed:false } }, // منع توزيع ألوان مختلفة
+    series:[{ name:'Designs', data: vals }],
+    xaxis:{ categories: cats },
+    dataLabels:{ enabled:false }
+  };
+
+  if (typeBarChart){ typeBarChart.destroy(); typeBarChart = null; }
+  typeBarChart = new ApexCharts(document.querySelector('#typeBar'), opts);
+  typeBarChart.render();
+}
+
 
   function drawTypePie(data){
     const byType = {};
@@ -583,3 +589,4 @@
 
 </body>
 </html>
+
