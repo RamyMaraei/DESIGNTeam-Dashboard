@@ -335,7 +335,7 @@ function colorForType(name){
   function drawTypePie(data){
     const byType = {};
     data.forEach(r=>{
-      const k = r.type || 'Unknown';
+      const k = canonicalType(r.type) || 'Unknown';
       byType[k] = (byType[k] || 0) + normalizeQty(r.qty);
     });
     const cats   = Object.keys(byType);
@@ -413,7 +413,8 @@ function colorForType(name){
 
     const byType = {};
     rows.forEach(r=>{
-      const k = r.type || 'Unknown';
+      const k = canonicalType(r.type) || 'Unknown';
+
       byType[k] = (byType[k] || 0) + normalizeQty(r.qty);
     });
     typesEl.innerHTML = '<ul>' + Object.entries(byType)
@@ -607,5 +608,6 @@ document.getElementById('toDateDisp').textContent = '';
 
 </body>
 </html>
+
 
 
