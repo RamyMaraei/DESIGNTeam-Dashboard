@@ -133,10 +133,57 @@
   const CHART_BASE = CSS.getPropertyValue('--chart-base').trim() || '#21000E';
   const HEAD_RED = CSS.getPropertyValue('--red').trim() || '#ff002b';
 
-  const TYPE_COLORS = {
-    'Covers': '#351c75','Edit Covers': '#674ea7','Banners': '#990000','Logos / Typography': '#c27ba0',
-    'Snap Tiles': '#fbbc04','Snap Theme': '#ffd966','Thumbnails': '#3c78d8'
-  };
+  // ألوان ثابتة لكل نوع - اختيارات واضحة
+const TYPE_COLOR_MAP = {
+  'Snap Tiles': '#fbbc04',             // Snapchat Tile - أصفر
+  'Snap Theme': '#ffd966',
+  'Banners': '#990000',                 // YouTube Banner - أحمر
+  'Thumbnails': '#3c78d8',
+  'Covers': '#351c75',
+  'Edit Covers': '#674ea7',
+  'Logos / Typography': '#c27ba0',
+  'Unknown': '#9ca3af'
+};
+
+// توحيد أسماء الأنواع المختلفة لنفس النوع
+function canonicalType(raw){
+  if(!raw) return 'Unknown';
+  const s = String(raw).trim().toLowerCase();
+
+  // Snapchat Tile
+  if (['snap tiles','snap tile','snapchat tile','snapchat tiles','snap-tiles'].includes(s)) return 'Snap Tiles';
+
+  // Snap Theme
+  if (['snap theme','snapchat theme'].includes(s)) return 'Snap Theme';
+
+  // Banners - YouTube Banner
+  if (['banners','banner','youtube banner','yt banner','youtube banners'].includes(s)) return 'Banners';
+
+  // Thumbnails
+  if (['thumbnails','thumbnail','youtube thumbnail','yt thumbnail'].includes(s)) return 'Thumbnails';
+
+  // Covers
+  if (['covers','cover'].includes(s)) return 'Covers';
+
+  // Edit Covers
+  if (['edit covers','cover edit','edit cover'].includes(s)) return 'Edit Covers';
+
+  // Logos / Typography
+  if ([
+    'logos / typography','logo / typography','logos & typography','logo&typography',
+    'logos','logo','typography'
+  ].includes(s)) return 'Logos / Typography';
+
+  // لو مش مطابق لأي حاجة، ارجع الخام
+  return String(raw).trim();
+}
+
+// لون النوع بعد التوحيد
+function colorForType(name){
+  const key = canonicalType(name);
+  return TYPE_COLOR_MAP[key] || TYPE_COLOR_MAP['Unknown'];
+}
+
   const CALM_FALLBACKS = ['#6b7280','#9ca3af','#94a3b8','#a3b18a','#bdb2ff','#8ecae6','#bde0fe','#a8dadc'];
 
   let RAW = [];
@@ -560,4 +607,5 @@ document.getElementById('toDateDisp').textContent = '';
 
 </body>
 </html>
+
 
