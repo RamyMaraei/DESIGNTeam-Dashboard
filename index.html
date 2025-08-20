@@ -49,10 +49,25 @@
 
     <div class="card p-3 mb-3">
       <div class="row g-2 align-items-end">
-        <div class="col-md-3"><label class="form-label">Year</label><select id="yearSelect" class="form-select"><option value="all">All</option></select></div>
-        <div class="col-md-3"><label class="form-label">From</label><input id="fromDate" type="date" class="form-control" /><div class="muted" id="fromDateDisp"></div></div>
-        <div class="col-md-3"><label class="form-label">To</label><input id="toDate" type="date" class="form-control" /><div class="muted" id="toDateDisp"></div></div>
-        <div class="col-md-3 d-flex gap-2"><button id="btnThisWeek" class="btn btn-outline-light w-100">This Week</button><button id="btnApply" class="btn btn-primary w-100">Apply</button></div>
+        <div class="col-md-3">
+          <label class="form-label">Year</label>
+          <select id="yearSelect" class="form-select"><option value="all">All</option></select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">From</label>
+          <input id="fromDate" type="date" class="form-control" />
+          <div class="muted" id="fromDateDisp"></div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">To</label>
+          <input id="toDate" type="date" class="form-control" />
+          <div class="muted" id="toDateDisp"></div>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button id="btnThisWeek" class="btn btn-outline-light w-100">This Week</button>
+          <button id="btnClear" class="btn btn-outline-light w-100">Clear</button>
+          <button id="btnApply" class="btn btn-primary w-100">Apply</button>
+        </div>
       </div>
     </div>
 
@@ -97,7 +112,6 @@
         <div id="clientSuggest" class="typeahead-list" style="display:none;"></div>
       </div>
 
-      <!-- نُبقي الـselect كـ fallback -->
       <select id="clientSelect" class="form-select form-select-sm mb-2 mt-2"></select>
 
       <div id="clientTotal" class="mb-2"></div>
@@ -177,8 +191,6 @@
 
   // ===== Data utils =====
   function sumQty(rows){ let t=0; for (const r of rows) t += normalizeQty(r.qty); return t; }
-
-  // NEW: عدد الأيام الفعلية الظاهرة (تواريخ فريدة داخل البيانات المفلترة)
   function uniqueDayCount(rows){
     const s = new Set();
     for (const r of rows){ s.add(fmtDDMMYYYY_UTC(r.date)); }
@@ -366,7 +378,7 @@
 
     const lastDate = rows.length ? new Date(Math.max(...rows.map(r => r.date.getTime()))) : null;
     if (lastEl){
-      lastEl.innerHTML = `<strong>Last Design Date:</strong> ${lastDate ? fmtDDMMYYYY_UTC(lastDate) : '—'}`;
+      lastEl.innerHTML = `<strong>Last Design Date:</strong> ${lastDate ? fmtDDMMYYYY_UTC(lastDate) : '-'}`;
     }
   }
 
@@ -444,14 +456,13 @@
     document.getElementById('kpiYearTotal').textContent = sumQty(yearBase);
     document.getElementById('kpiRangeTotal').textContent = sumQty(filtered);
 
-    // NEW: Daily Average على عدد الأيام الظاهرة فعليًا
+    // Daily Average حسب عدد الأيام الظاهرة
     const daysShown = uniqueDayCount(filtered);
-    document.getElementById('kpiRangeAvg').textContent = daysShown
-      ? (sumQty(filtered) / daysShown).toFixed(2)
-      : '--';
+    document.getElementById('kpiRangeAvg').textContent = daysShown ? (sumQty(filtered)/daysShown).toFixed(2) : '--';
 
-    document.getElementById('fromDateDisp').textContent = fromUTC ? 'Selected: '+fmtDDMMYYYY_UTC(fromUTC) : '';
-    document.getElementById('toDateDisp').textContent = toUTC ? 'Selected: '+fmtDDMMYYYY_UTC(toUTC) : '';
+    // حذف كلمة Selected:
+    document.getElementById('fromDateDisp').textContent = fromUTC ? fmtDDMMYYYY_UTC(fromUTC) : '';
+    document.getElementById('toDateDisp').textContent = toUTC ? fmtDDMMYYYY_UTC(toUTC) : '';
 
     drawMainArea(filtered);
     drawDesignerTotals(filtered);
@@ -484,6 +495,8 @@
     renderClientOptions(CLIENTS, false);
 
     document.getElementById('btnApply').addEventListener('click', applyFilters);
+
+    // This Week: Monday → Sunday
     document.getElementById('btnThisWeek').addEventListener('click', ()=>{
       const now = new Date();
       const day = now.getDay();
@@ -495,6 +508,20 @@
       document.getElementById('toDate').value = toISO(sunLocal);
       applyFilters();
     });
+
+    // Clear filter
+    document.getElementById('btnClear').addEventListener('click', ()=>{
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
+      document.getElementById('fromDateDisp').textContent = '';
+      document.getElementById('toDateDisp').textContent = '';
+      document.getElementById('clientSearch').value = '';
+      document.getElementById('clientSelect').selectedIndex = 0;
+      const suggestBox = document.getElementById('clientSuggest');
+      suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; // اخفاء اقتراحات البحث
+      applyFilters();
+    });
+
     yearSelect.addEventListener('change', applyFilters);
     document.getElementById('clientSelect').addEventListener('change', ()=> updateClientDetails(LAST_FILTERED));
 
