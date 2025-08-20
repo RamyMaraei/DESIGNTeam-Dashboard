@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DESIGN TEAM DASHBOARD</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --bg: #f4f0ed; --text: #21000e; --box: #ffffff; --border: #21000e22; --control: #ffffff; --control-border:#21000e55; --red: #ff002b; --chart-base: #21000E; --link: #ff002b; }
+    body { background: var(--bg); color: var(--text); font-family: 'Alexandria', sans-serif; }
+    .card { background: var(--box); border: 1px solid var(--border); }
+    .form-select, .form-control { background: var(--control); color: var(--text); border-color: var(--control-border); }
+    .btn-primary { background: var(--red) !important; border-color: var(--red) !important; color: #fff !important; }
+    .btn-outline-light { border-color: var(--red) !important; color: var(--red) !important; }
+    h1, .form-label { color: var(--red); }
+    .kpi h2 { font-weight: 800; color: var(--text); }
+    .kpi .small { color: var(--text) !important; }
+    .muted { color: #6b7280; font-size: .8rem; }
+    #clientSelect.form-select { font-size: .9rem; }
+    #clientSearch { font-size: .9rem; margin-bottom: .4rem; }
+    footer { text-align: center; padding: 1rem; font-size: 0.9rem; color: var(--text); border-top: 1px solid var(--border); margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+
+    <!-- الشعار -->
+    <div class="d-flex align-items-center justify-content-center mb-2">
+      <img src="https://ramymaraei.github.io/banner-checker/ALFAN_LOGO-Small.png" alt="ALFAN Logo" style="max-height:56px;">
+    </div>
+    <!-- العنوان -->
+    <div class="d-flex align-items-center justify-content-center mb-3">
+      <h1 class="fs-4 m-0 text-center">DESIGN TEAM DASHBOARD</h1>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3"><label class="form-label">Year</label><select id="yearSelect" class="form-select"><option value="all">All</option></select></div>
+        <div class="col-md-3"><label class="form-label">From</label><input id="fromDate" type="date" class="form-control" /><div class="muted" id="fromDateDisp"></div></div>
+        <div class="col-md-3"><label class="form-label">To</label><input id="toDate" type="date" class="form-control" /><div class="muted" id="toDateDisp"></div></div>
+        <div class="col-md-3 d-flex gap-2"><button id="btnThisWeek" class="btn btn-outline-light w-100">This Week</button><button id="btnApply" class="btn btn-primary w-100">Apply</button></div>
+      </div>
+    </div>
+
+    <div class="row g-3 kpi">
+      <div class="col-md-4"><div class="card p-3 h-100"><span class="small">Year Total</span><h2 id="kpiYearTotal">--</h2></div></div>
+      <div class="col-md-4"><div class="card p-3 h-100"><span class="small">Range Total</span><h2 id="kpiRangeTotal">--</h2></div></div>
+      <div class="col-md-4"><div class="card p-3 h-100"><span class="small">Daily Average</span><h2 id="kpiRangeAvg">--</h2></div></div>
+    </div>
+
+    <div class="card p-3 mt-3"><div id="chart"></div></div>
+    <div class="row mt-3" id="designerTotals"></div>
+    <div class="row mt-3" id="designerPies"></div>
+    <div class="card p-3 mt-3">
+  <div class="row g-3">
+    <div class="col-md-6"><div id="typeBar"></div></div>
+    <div class="col-md-6"><div id="typePie"></div></div>
+  </div>
+</div>
+
+
+    <!-- شهري + سنوي -->
+    <div class="card p-3 mt-3">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <h6>Monthly Comparison</h6>
+          <div id="monthsBar"></div>
+          <div class="muted" id="monthsHint"></div>
+        </div>
+        <div class="col-md-6">
+          <h6>Yearly Comparison</h6>
+          <div id="yearsBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 mt-3">
+      <label class="form-label">Select Channel</label>
+      <input id="clientSearch" type="text" class="form-control" placeholder="Search channel..." />
+      <select id="clientSelect" class="form-select form-select-sm mb-2"></select>
+      <div id="clientTotal" class="mb-2"></div>
+      <div id="clientTypes" class="mb-2"></div>
+      <div id="clientChannels" class="mb-2"></div>
+<div id="clientLastDate" class="mb-2"></div>
+      <div id="clientDesigners"></div>
+    </div>
+
+    <footer>
+      شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Dashboard - Ramy Maraei © 2025
+    </footer>
+  </div>
+
+  <script>
+  // ===== CONFIG =====
+  const SHEET_API = 'https://script.google.com/macros/s/AKfycbzl7CV83GMqgUMEK7CZlAJ-2s4aruOYeistkcpX_6mozP_e4c3DG4eMIEN7GQZcx4B6/exec';
+  const CSS = getComputedStyle(document.documentElement);
+  const CHART_BASE = CSS.getPropertyValue('--chart-base').trim() || '#21000E';
+  const HEAD_RED = CSS.getPropertyValue('--red').trim() || '#ff002b';
+
+  const TYPE_COLORS = {
+    'Covers': '#351c75','Edit Covers': '#674ea7','Banners': '#990000','Logos / Typography': '#c27ba0',
+    'Snap Tiles': '#fbbc04','Snap Theme': '#ffd966','Thumbnails': '#3c78d8'
+  };
+  const CALM_FALLBACKS = ['#6b7280','#9ca3af','#94a3b8','#a3b18a','#bdb2ff','#8ecae6','#bde0fe','#a8dadc'];
+
+  let RAW = [];
+ let areaChart = null, typeBarChart = null, typePieChart = null, monthsChart = null, yearsChart = null;
+  let LAST_FILTERED = [];
+  let CLIENTS = [];
+
+  // ===== Number normalization =====
+  function normalizeQty(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number' && isFinite(v)) return v;
+    let s = String(v).trim();
+    const ar = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+    s = s.replace(/[٠-٩]/g, d => ar[d]);      // أرقام عربية → لاتينية
+    s = s.replace(/[\u066C,]/g, '');          // فواصل آلاف
+    s = s.replace(/\u066B/g, '.');            // عشري عربي → .
+    if (/^[\d.\-+\s]+$/.test(s) && s.includes('+')) {
+      return s.split('+').reduce((a,p)=> a+(parseFloat(p)||0), 0);
+    }
+    const n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  // ===== Date helpers =====
+  function toUTCDateOnly(y,m,d){ return new Date(Date.UTC(y,m-1,d)); }
+
+  // أهم إصلاح: خد اليوم "المحلي" من أي قيمة ثم ثبّته كتاريخ-فقط
+  function parseDateOnly(input){
+    if (input instanceof Date) {
+      return toUTCDateOnly(input.getFullYear(), input.getMonth()+1, input.getDate());
+    }
+    const s = String(input).trim();
+
+    // ISO date-only
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return toUTCDateOnly(+m[1], +m[2], +m[3]);
+
+    // جرّب محرك التاريخ أولاً (بيفهم "GMT", "Z", إلخ)
+    const dtTry = new Date(s);
+    if (!isNaN(dtTry)) {
+      return toUTCDateOnly(dtTry.getFullYear(), dtTry.getMonth()+1, dtTry.getDate());
+    }
+
+    // fallback رقمي (D/M/Y أو M/D/Y)
+    const parts = s.split(/[^0-9]/).filter(Boolean).map(Number);
+    if (parts.length >= 3){
+      let a=parts[0], b=parts[1], c=parts[2];
+      if (a>31 && b<=12) return toUTCDateOnly(a,b,c); // Y-M-D
+      if (a>12) return toUTCDateOnly(c,b,a);          // D-M-Y
+      if (b>12) return toUTCDateOnly(c,a,b);          // M-D-Y
+      return toUTCDateOnly(c,b,a);                    // افتراضي D-M-Y
+    }
+
+    // آخر حل: تاريخ اليوم
+    const now = new Date();
+    return toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
+  }
+
+  function fromISODateOnly(iso){ const [Y,M,D] = iso.split('-').map(Number); return toUTCDateOnly(Y,M,D); }
+  function fmtDDMMYYYY_UTC(d){ return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`; }
+
+  // ===== Data utils =====
+  function sumQty(rows){ let t=0; for (const r of rows) t += normalizeQty(r.qty); return t; }
+
+  async function loadData(){
+    try{
+      const res = await fetch(SHEET_API, { cache: 'no-store' });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const json = await res.json();
+      return (Array.isArray(json)?json:[]).map(r=>{
+        const dateOnly = parseDateOnly(r.Date);   // ← تثبيت اليوم المحلي
+        return {
+          date: dateOnly,
+          qty: normalizeQty(r.Quantity),
+          type: (r.Type||'').trim(),
+          designer: (r.Designer||'').trim(),
+          client: (r.Client||'').trim(),
+          channel: String(r['Channel ID'] ?? '').trim()
+        };
+      }).filter(r=> r.date instanceof Date && !isNaN(r.date.getTime()));
+    }catch(e){ console.error(e); return []; }
+  }
+
+  function groupByDay(data){
+    const map = new Map();
+    data.forEach(r=>{
+      const k = fmtDDMMYYYY_UTC(r.date);
+      map.set(k, (map.get(k)||0) + normalizeQty(r.qty));
+    });
+    const labels = Array.from(map.keys()).sort((a,b)=>{
+      const [da,ma,ya] = a.split('/').map(Number); const [db,mb,yb] = b.split('/').map(Number);
+      return Date.UTC(ya,ma-1,da) - Date.UTC(yb,mb-1,db);
+    });
+    return { labels, series: labels.map(l=>map.get(l)) };
+  }
+
+  // ===== Charts =====
+  function drawMainArea(data){
+    const {labels, series} = groupByDay(data);
+    const opts = {
+      chart:{ type:'area', height:320, toolbar:{show:false}, foreColor: CHART_BASE },
+      colors:[CHART_BASE],
+      series:[{ name:'Designs', data: series }],
+      xaxis:{ categories: labels },
+      dataLabels:{enabled:false},
+      stroke:{ curve:'smooth', width:3 },
+      fill:{ type:'gradient', gradient:{ opacityFrom:.25, opacityTo:.05 } }
+    };
+    const el = document.querySelector('#chart');
+    if(!areaChart){ areaChart = new ApexCharts(el, opts); areaChart.render(); }
+    else { areaChart.updateOptions({ xaxis:{ categories: labels }, chart:{ foreColor: CHART_BASE }, colors:[CHART_BASE] }); areaChart.updateSeries([{name:'Designs', data: series}]); }
+  }
+
+  function drawDesignerTotals(data){
+    const c = document.getElementById('designerTotals'); c.innerHTML='';
+    const designers = [...new Set(data.map(r=>r.designer))].filter(Boolean);
+    designers.forEach(d=>{
+      const total = sumQty(data.filter(r=>r.designer===d));
+      const div = document.createElement('div'); div.className='col-12 col-md-4';
+      div.innerHTML = `<div class="card p-3 h-100"><span class="small">${d}</span><h2>${total}</h2></div>`;
+      c.appendChild(div);
+    });
+  }
+
+  function drawDesignerPies(data){
+    const container = document.getElementById('designerPies'); container.innerHTML='';
+    const designers = [...new Set(data.map(r=>r.designer))].filter(Boolean);
+    designers.forEach(d=>{
+      const byType = {};
+      data.filter(r=>r.designer===d).forEach(r=>{
+        const k=r.type||'Unknown';
+        byType[k]=(byType[k]||0)+normalizeQty(r.qty);
+      });
+      const labels = Object.keys(byType); const series = labels.map(k=>byType[k]);
+      const wrap = document.createElement('div'); wrap.className='col-12 col-md-4'; const div = document.createElement('div'); wrap.appendChild(div); container.appendChild(wrap);
+      new ApexCharts(div,{ chart:{type:'pie', height:300}, series, labels, title:{ text:d, style:{ color: HEAD_RED } } }).render();
+    });
+  }
+
+  function drawTypeBar(data){
+    const byType = {};
+    data.forEach(r=>{
+      const k=r.type||'Unknown';
+      byType[k]=(byType[k]||0)+normalizeQty(r.qty);
+    });
+    const cats = Object.keys(byType), vals = cats.map(k=>byType[k]);
+    const colors = cats.map((t,i)=> TYPE_COLORS[t] || CALM_FALLBACKS[i % CALM_FALLBACKS.length]);
+    const opts = { chart:{type:'bar', height:350, foreColor:CHART_BASE}, colors, series:[{name:'Quantity', data:vals}], xaxis:{ categories: cats }, dataLabels:{enabled:false} };
+    if(typeBarChart){ typeBarChart.destroy(); typeBarChart=null; }
+    typeBarChart = new ApexCharts(document.querySelector('#typeBar'), opts); typeBarChart.render();
+  }
+
+function drawTypePie(data){
+  const byType = {};
+  data.forEach(r=>{
+    const k = r.type || 'Unknown';
+    byType[k] = (byType[k] || 0) + normalizeQty(r.qty);
+  });
+
+  const cats   = Object.keys(byType);
+  const vals   = cats.map(k => byType[k]);
+  const colors = cats.map((t,i)=> TYPE_COLORS[t] || CALM_FALLBACKS[i % CALM_FALLBACKS.length]);
+
+  const opts = {
+    chart:{ type:'pie', height:350, foreColor: CHART_BASE },
+    colors,
+    series: vals,
+    labels: cats,
+    legend:{ position:'bottom' },
+    dataLabels:{ enabled:true },
+    title:{ text:'By Type (Pie)', style:{ color: HEAD_RED } }
+  };
+
+  if (typePieChart){ typePieChart.destroy(); typePieChart = null; }
+  typePieChart = new ApexCharts(document.querySelector('#typePie'), opts);
+  typePieChart.render();
+}
+
+
+  // اجمع لحدّ "اليوم" المحلي فقط لتفادي شهور مستقبلية
+  function drawMonthsBar(yearRows, selectedYear){
+    const months = new Array(12).fill(0);
+    const now = new Date();
+    const todayLocal = toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
+    yearRows.forEach(r=>{
+      if (r.date <= todayLocal) {
+        months[r.date.getUTCMonth()] += normalizeQty(r.qty);
+      }
+    });
+    const opts = { chart:{ type:'bar', height:300, foreColor: CHART_BASE, toolbar:{show:false} }, colors:[HEAD_RED],
+      series:[{ name:'Designs', data: months }],
+      xaxis:{ categories:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] },
+      dataLabels:{enabled:false} };
+    if(monthsChart){ monthsChart.destroy(); monthsChart=null; }
+    monthsChart = new ApexCharts(document.querySelector('#monthsBar'), opts); monthsChart.render();
+    document.getElementById('monthsHint').textContent = selectedYear && selectedYear!=='all' ? `Year ${selectedYear}` : '';
+  }
+
+  // Yearly comparison (2020..2024 ثابت + إجمالي السنة الحالية حتى اليوم)
+  function drawYearsBar(currentYearTotal){
+    const labels = ['2020','2021','2022','2023','2024','2025'];
+    const values = [4248, 6961, 12002, 9542, 10810, currentYearTotal];
+    const opts = {
+      chart:{ type:'bar', height:300, foreColor: CHART_BASE, toolbar:{show:false} },
+      colors:[HEAD_RED],
+      series:[{ name:'Designs', data: values }],
+      xaxis:{ categories: labels },
+      dataLabels:{ enabled:false }
+    };
+    if (yearsChart){ yearsChart.destroy(); yearsChart = null; }
+    yearsChart = new ApexCharts(document.querySelector('#yearsBar'), opts);
+    yearsChart.render();
+  }
+
+  function updateClientDetails(filtered){
+  const sel = document.getElementById('clientSelect'); 
+  const val = sel.value;
+
+  const totalEl = document.getElementById('clientTotal');
+  const typesEl = document.getElementById('clientTypes');
+  const chEl    = document.getElementById('clientChannels');
+  const desEl   = document.getElementById('clientDesigners');
+  const lastEl  = document.getElementById('clientLastDate');
+
+  if(!val){
+    totalEl.textContent = '';
+    typesEl.textContent = '';
+    chEl.textContent    = '';
+    desEl.textContent   = '';
+    if (lastEl) lastEl.textContent = '';
+    return;
+  }
+
+  const rows = filtered.filter(r => r.client === val);
+
+  // الإجمالي
+  totalEl.innerHTML = `<strong>Total Designs:</strong> ${sumQty(rows)}`;
+
+  // توزيع حسب النوع
+  const byType = {};
+  rows.forEach(r=>{
+    const k = r.type || 'Unknown';
+    byType[k] = (byType[k] || 0) + normalizeQty(r.qty);
+  });
+  typesEl.innerHTML = '<ul>' + Object.entries(byType)
+    .sort((a,b)=> b[1]-a[1])
+    .map(([t,q])=>`<li>${t}: ${q}</li>`).join('') + '</ul>';
+
+  // القنوات والمصممين
+  chEl.innerHTML  = `<strong>Channels:</strong> ${[...new Set(rows.map(r=>String(r.channel||'').trim()).filter(Boolean))].join(', ')}`;
+  desEl.innerHTML = `<strong>Designers:</strong> ${[...new Set(rows.map(r=>r.designer).filter(Boolean))].join(', ')}`;
+
+  // آخر تاريخ تصميم داخل النطاق الحالي
+  const lastDate = rows.length ? new Date(Math.max(...rows.map(r => r.date.getTime()))) : null;
+  if (lastEl){
+    lastEl.innerHTML = `<strong>Last Design Date:</strong> ${lastDate ? fmtDDMMYYYY_UTC(lastDate) : '—'}`;
+  }
+}
+
+
+  function renderClientOptions(list, keep){
+    const sel = document.getElementById('clientSelect'); const current = keep ? sel.value : '';
+    sel.innerHTML = '<option value="">Select Channel</option>' + list.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+    if(keep && current && list.includes(current)) sel.value = current; else sel.selectedIndex = 0;
+  }
+
+  function applyFilters(){
+    const yearVal = document.getElementById('yearSelect').value;
+    const fromVal = document.getElementById('fromDate').value; const toVal = document.getElementById('toDate').value;
+    const fromUTC = fromVal ? fromISODateOnly(fromVal) : null; const toUTC = toVal ? fromISODateOnly(toVal) : null;
+
+    const yearBase = (yearVal==='all') ? RAW.slice() : RAW.filter(r=> r.date.getUTCFullYear() === Number(yearVal));
+    let filtered = yearBase.slice();
+    if(fromUTC) filtered = filtered.filter(r=> r.date >= fromUTC);
+    if(toUTC)   filtered = filtered.filter(r=> r.date <= toUTC);
+
+    LAST_FILTERED = filtered;
+
+    document.getElementById('kpiYearTotal').textContent = sumQty(yearBase);
+    document.getElementById('kpiRangeTotal').textContent = sumQty(filtered);
+    if(fromUTC && toUTC){
+      const days = Math.max(1, Math.floor((toUTC - fromUTC) / 86400000) + 1);
+      document.getElementById('kpiRangeAvg').textContent = (sumQty(filtered)/days).toFixed(2);
+    } else { document.getElementById('kpiRangeAvg').textContent = '--'; }
+
+    document.getElementById('fromDateDisp').textContent = fromUTC ? 'Selected: '+fmtDDMMYYYY_UTC(fromUTC) : '';
+    document.getElementById('toDateDisp').textContent = toUTC ? 'Selected: '+fmtDDMMYYYY_UTC(toUTC) : '';
+
+    drawMainArea(filtered);
+    drawDesignerTotals(filtered);
+    drawDesignerPies(filtered);
+    drawTypeBar(filtered);
+drawTypePie(filtered);
+    drawMonthsBar(yearBase, yearVal);
+
+    // إجمالي السنة الحالية حتى اليوم (محلي)
+    const now = new Date();
+    const todayLocal = toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
+    const currentYear = todayLocal.getUTCFullYear();
+    const currentYearTotal = sumQty(RAW.filter(r => r.date.getUTCFullYear() === currentYear && r.date <= todayLocal));
+    drawYearsBar(currentYearTotal);
+
+    updateClientDetails(LAST_FILTERED);
+  }
+
+  async function init(){
+    RAW = await loadData();
+    if(!RAW.length){ console.warn('No data'); return; }
+
+    const years = [...new Set(RAW.map(r=>r.date.getUTCFullYear()))].sort((a,b)=>b-a);
+    const yearSelect = document.getElementById('yearSelect');
+    yearSelect.innerHTML = '<option value="all">All</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+
+    const currentYear = new Date().getFullYear();
+    if (years.includes(currentYear)) yearSelect.value = String(currentYear);
+
+    CLIENTS = [...new Set(RAW.map(r=>r.client).filter(Boolean))].sort((a,b)=> a.localeCompare(b));
+    renderClientOptions(CLIENTS, false);
+
+    document.getElementById('btnApply').addEventListener('click', applyFilters);
+    // Monday → Sunday
+    document.getElementById('btnThisWeek').addEventListener('click', ()=>{
+      const now = new Date();
+      const day = now.getDay(); // 0 Sun .. 6 Sat
+      const diffToMon = (day===0? -6 : 1-day);
+      const monLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate()+diffToMon);
+      const sunLocal = new Date(monLocal.getFullYear(), monLocal.getMonth(), monLocal.getDate()+6);
+      const toISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      document.getElementById('fromDate').value = toISO(monLocal);
+      document.getElementById('toDate').value = toISO(sunLocal);
+      applyFilters();
+    });
+    yearSelect.addEventListener('change', applyFilters);
+    document.getElementById('clientSelect').addEventListener('change', ()=> updateClientDetails(LAST_FILTERED));
+    document.getElementById('clientSearch').addEventListener('input', (e)=>{
+      const q = e.target.value.toLowerCase();
+      const list = CLIENTS.filter(c=> c.toLowerCase().includes(q));
+      renderClientOptions(list, true);
+    });
+
+    applyFilters();
+  }
+
+  init();
+</script>
+
+</body>
+</html>
