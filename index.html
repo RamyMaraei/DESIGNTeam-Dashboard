@@ -178,6 +178,13 @@
   // ===== Data utils =====
   function sumQty(rows){ let t=0; for (const r of rows) t += normalizeQty(r.qty); return t; }
 
+  // NEW: عدد الأيام الفعلية الظاهرة (تواريخ فريدة داخل البيانات المفلترة)
+  function uniqueDayCount(rows){
+    const s = new Set();
+    for (const r of rows){ s.add(fmtDDMMYYYY_UTC(r.date)); }
+    return s.size;
+  }
+
   async function loadData(){
     try{
       const res = await fetch(SHEET_API, { cache: 'no-store' });
@@ -436,10 +443,12 @@
 
     document.getElementById('kpiYearTotal').textContent = sumQty(yearBase);
     document.getElementById('kpiRangeTotal').textContent = sumQty(filtered);
-    if(fromUTC && toUTC){
-      const days = Math.max(1, Math.floor((toUTC - fromUTC) / 86400000) + 1);
-      document.getElementById('kpiRangeAvg').textContent = (sumQty(filtered)/days).toFixed(2);
-    } else { document.getElementById('kpiRangeAvg').textContent = '--'; }
+
+    // NEW: Daily Average على عدد الأيام الظاهرة فعليًا
+    const daysShown = uniqueDayCount(filtered);
+    document.getElementById('kpiRangeAvg').textContent = daysShown
+      ? (sumQty(filtered) / daysShown).toFixed(2)
+      : '--';
 
     document.getElementById('fromDateDisp').textContent = fromUTC ? 'Selected: '+fmtDDMMYYYY_UTC(fromUTC) : '';
     document.getElementById('toDateDisp').textContent = toUTC ? 'Selected: '+fmtDDMMYYYY_UTC(toUTC) : '';
