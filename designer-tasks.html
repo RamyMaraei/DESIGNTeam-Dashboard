@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DESIGNER TASKS</title>
+
+  <!-- Bootstrap + Font -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- SheetJS للتصدير Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f4f0ed; --text:#21000e; --box:#ffffff; --border:#21000e22;
+      --control:#ffffff; --control-border:#21000e55; --red:#ff002b;
+      --chart-base:#21000E; --link:#ff002b;
+    }
+    body{ background:var(--bg); color:var(--text); font-family:'Alexandria',sans-serif; }
+    .card{ background:var(--box); border:1px solid var(--border); }
+    .form-select,.form-control{ background:var(--control); color:var(--text); border-color:var(--control-border); }
+    .btn-primary{ background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; }
+    .btn-outline-light{ border-color:var(--red)!important; color:var(--red)!important; }
+    h1,.form-label{ color:var(--red); }
+    a{ color:var(--link); }
+    footer{ text-align:center; padding:1rem; font-size:.9rem; color:var(--text); border-top:1px solid var(--border); margin-top:1rem; }
+    .muted{ color:#6b7280; font-size:.85rem; }
+
+    /* جدول مضغوط بخط أصغر */
+    .table-tight{ font-size:.86rem; }
+    .table-tight thead th{ position:sticky; top:0; background:var(--box); z-index:2; }
+    .table-tight th, .table-tight td{ padding:.35rem .5rem; vertical-align:middle; }
+    .cell-wrap{ max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cell-link{ text-align:center; }
+
+    /* توسيع عمود Creator */
+    th.col-creator, td.col-creator .cell-wrap{ max-width:540px; }
+    td.col-creator .cell-wrap{ max-width:540px; }
+
+    /* شريط الأدوات: الأزرار يمين وصغيرة */
+    .toolbar{ display:flex; gap:.5rem; align-items:center; }
+    .toolbar .right{ margin-left:auto; display:flex; gap:.5rem; }
+    .toolbar .btn{ white-space:nowrap; }
+
+    @media (max-width: 992px){
+      .cell-wrap{ max-width:260px; }
+      th.col-creator, td.col-creator .cell-wrap{ max-width:340px; }
+    }
+    @media print{
+      .no-print{ display:none!important; }
+      body{ background:#fff; }
+      .table-tight{ font-size:11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+
+    <!-- الشعار -->
+    <div class="d-flex align-items-center justify-content-center mb-2">
+      <img src="https://ramymaraei.github.io/banner-checker/ALFAN_LOGO-Small.png" alt="ALFAN Logo" style="max-height:56px;">
+    </div>
+    <!-- العنوان -->
+    <div class="d-flex align-items-center justify-content-center mb-3">
+      <h1 class="fs-4 m-0 text-center">DESIGNER TASKS</h1>
+    </div>
+
+    <!-- أدوات التحكم -->
+    <div class="card p-3 mb-3 no-print">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Designer</label>
+          <select id="designerSelect" class="form-select">
+            <option value="">Select designer</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">From</label>
+          <input id="fromDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">To</label>
+          <input id="toDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Search</label>
+          <input id="searchBox" type="text" class="form-control" placeholder="Type to filter..." />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button id="btnApply" class="btn btn-primary w-100">Apply</button>
+          <button id="btnClear" class="btn btn-outline-light w-100">Clear</button>
+        </div>
+      </div>
+
+      <!-- toolbar: Back يسار / Export يمين وصغيرة -->
+      <div class="toolbar mt-3">
+        <a href="index.html" class="btn btn-outline-light" title="Back to Dashboard">Back</a>
+        <div class="right">
+          <button id="btnCSV" class="btn btn-outline-light btn-sm">Export CSV</button>
+          <button id="btnXLSX" class="btn btn-outline-light btn-sm">Export Excel</button>
+          <button id="btnPrint" class="btn btn-outline-light btn-sm">Print</button>
+        </div>
+      </div>
+
+      <div class="row g-3 kpi mt-2">
+        <div class="col-md-3"><div class="card p-3 h-100"><span class="small">Rows</span><h2 id="kpiRows">--</h2></div></div>
+        <div class="col-md-3"><div class="card p-3 h-100"><span class="small">Total Quantity</span><h2 id="kpiTotal">--</h2></div></div>
+        <div class="col-md-3"><div class="card p-3 h-100"><span class="small">Last Design Date</span><h2 id="kpiLast">--</h2></div></div>
+        <div class="col-md-3"><div class="card p-3 h-100"><span class="small">Selected Designer</span><h2 id="kpiDesigner">--</h2></div></div>
+      </div>
+    </div>
+
+    <!-- الجدول -->
+    <div class="card p-3">
+      <div class="table-responsive" style="max-height:70vh;">
+        <table id="dataTable" class="table table-sm table-striped align-middle table-tight">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="muted mt-2" style="display:none;">No data to display.</div>
+    </div>
+
+    <!-- فوتر -->
+    <footer class="no-print">
+      شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Dashboard - Ramy Maraei © 2025
+    </footer>
+  </div>
+
+  <script>
+    // ===== CONFIG =====
+    const SHEET_API = 'https://script.google.com/macros/s/AKfycbzl7CV83GMqgUMEK7CZlAJ-2s4aruOYeistkcpX_6mozP_e4c3DG4eMIEN7GQZcx4B6/exec';
+
+    // الأعمدة المطلوبة (حذف Top Task و Edits) + إعادة تسمية Client -> Creator
+    const COLUMNS = [
+      'Date','Creator','Title','Link','Quantity','Type','Platform',
+      'Reference','Comments','Channel ID'
+    ];
+
+    // ===== مساعدات أرقام وتواريخ =====
+    function normalizeQty(v){
+      if (v === null || v === undefined) return 0;
+      if (typeof v === 'number' && isFinite(v)) return v;
+      let s = String(v).trim();
+      const ar = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+      s = s.replace(/[٠-٩]/g, d => ar[d]);
+      s = s.replace(/[\u066C,]/g, '');
+      s = s.replace(/\u066B/g, '.');
+      if (/^[\d.\-+\s]+$/.test(s) && s.includes('+')) {
+        return s.split('+').reduce((a,p)=> a+(parseFloat(p)||0), 0);
+      }
+      const n = parseFloat(s);
+      return isFinite(n) ? n : 0;
+    }
+    function toUTCDateOnly(y,m,d){ return new Date(Date.UTC(y,m-1,d)); }
+    function parseDateOnly(input){
+      if (input instanceof Date) return toUTCDateOnly(input.getFullYear(), input.getMonth()+1, input.getDate());
+      const s = String(input||'').trim();
+      let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (m) return toUTCDateOnly(+m[1],+m[2],+m[3]);
+      const dtTry = new Date(s);
+      if (!isNaN(dtTry)) return toUTCDateOnly(dtTry.getFullYear(), dtTry.getMonth()+1, dtTry.getDate());
+      const parts = s.split(/[^0-9]/).filter(Boolean).map(Number);
+      if (parts.length>=3){
+        let a=parts[0],b=parts[1],c=parts[2];
+        if(a>31 && b<=12) return toUTCDateOnly(a,b,c);
+        if(a>12) return toUTCDateOnly(c,b,a);
+        if(b>12) return toUTCDateOnly(c,a,b);
+        return toUTCDateOnly(c,b,a);
+      }
+      const now = new Date();
+      return toUTCDateOnly(now.getFullYear(),now.getMonth()+1,now.getDate());
+    }
+    function fmtDDMMYYYY_UTC(d){
+      return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
+    }
+
+    // ===== الحالة العامة =====
+    let RAW = [];
+    let FILTERED = [];
+
+    // تحميل البيانات
+    async function loadData(){
+      try{
+        const res = await fetch(SHEET_API, { cache:'no-store' });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const json = await res.json();
+        return (Array.isArray(json)?json:[]).map(r=>{
+          const dateOnly = parseDateOnly(r.Date);
+          return {
+            __raw: r,
+            __date: dateOnly,
+            __qty: normalizeQty(r.Quantity),
+            Designer: (r.Designer||'').trim()
+          };
+        });
+      }catch(e){
+        console.error(e);
+        return [];
+      }
+    }
+
+    // تطبيق الفلاتر
+    function applyFilters(){
+      const dname = document.getElementById('designerSelect').value.trim();
+      const fromVal = document.getElementById('fromDate').value;
+      const toVal   = document.getElementById('toDate').value;
+      const q       = document.getElementById('searchBox').value.trim().toLowerCase();
+      const fromUTC = fromVal ? parseDateOnly(fromVal) : null;
+      const toUTC   = toVal   ? parseDateOnly(toVal)   : null;
+
+      let rows = RAW.slice();
+      if (dname) rows = rows.filter(r => r.Designer.toLowerCase() === dname.toLowerCase());
+      if (fromUTC) rows = rows.filter(r => r.__date >= fromUTC);
+      if (toUTC)   rows = rows.filter(r => r.__date <= toUTC);
+
+      if (q){
+        rows = rows.filter(r=>{
+          const raw = r.__raw || {};
+          for (const k in raw){
+            if (String(raw[k]).toLowerCase().includes(q)) return true;
+          }
+          return false;
+        });
+      }
+
+      FILTERED = rows;
+      renderTable();
+      updateKPIs();
+    }
+
+    // رسم الجدول
+    function renderTable(){
+      const head = document.getElementById('tableHead');
+      const body = document.getElementById('tableBody');
+      const empty = document.getElementById('emptyState');
+      head.innerHTML = ''; body.innerHTML = '';
+
+      if (!FILTERED.length){
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      // الرؤوس
+      const trh = document.createElement('tr');
+      COLUMNS.forEach(col=>{
+        const th = document.createElement('th');
+        th.textContent = col;
+        if (col === 'Creator') th.classList.add('col-creator');
+        if (col === 'Link') th.classList.add('text-center');
+        trh.appendChild(th);
+      });
+      head.appendChild(trh);
+
+      // الصفوف
+      const frag = document.createDocumentFragment();
+      FILTERED.forEach(r=>{
+        const tr = document.createElement('tr');
+        COLUMNS.forEach(col=>{
+          const td = document.createElement('td');
+
+          if (col === 'Date'){
+            td.textContent = fmtDDMMYYYY_UTC(r.__date);
+
+          } else if (col === 'Quantity'){
+            td.textContent = normalizeQty(r.__raw['Quantity']);
+
+          } else if (col === 'Link'){
+            td.classList.add('cell-link');
+            const linkVal = r.__raw['Link'];
+            if (linkVal && /^https?:\/\//i.test(String(linkVal))){
+              const a = document.createElement('a');
+              a.href = String(linkVal);
+              a.target = '_blank';
+              a.rel = 'noopener';
+              a.className = 'btn btn-primary btn-sm';
+              a.textContent = 'Open';
+              td.appendChild(a);
+            } else {
+              td.textContent = '';
+            }
+
+          } else if (col === 'Creator'){
+            td.classList.add('col-creator');
+            const div = document.createElement('div');
+            div.className = 'cell-wrap';
+            div.textContent = (r.__raw['Client'] ?? '');
+            td.appendChild(div);
+
+          } else if (col === 'Title' || col === 'Comments' || col === 'Reference'){
+            const div = document.createElement('div');
+            div.className = 'cell-wrap';
+            div.textContent = (r.__raw[col] ?? '');
+            td.appendChild(div);
+
+          } else {
+            td.textContent = (r.__raw[col] ?? '');
+          }
+
+          tr.appendChild(td);
+        });
+        frag.appendChild(tr);
+      });
+      body.appendChild(frag);
+    }
+
+    // KPIs
+    function updateKPIs(){
+      const rows = FILTERED;
+      const totalQty = rows.reduce((a,r)=> a + normalizeQty(r.__raw['Quantity']), 0);
+      const lastDate = rows.length ? new Date(Math.max(...rows.map(r=> r.__date.getTime()))) : null;
+      const dname = document.getElementById('designerSelect').value.trim() || '—';
+
+      document.getElementById('kpiRows').textContent = rows.length;
+      document.getElementById('kpiTotal').textContent = totalQty;
+      document.getElementById('kpiLast').textContent = lastDate ? fmtDDMMYYYY_UTC(lastDate) : '—';
+      document.getElementById('kpiDesigner').textContent = dname;
+    }
+
+    // تعبئة قائمة المصممين
+    function fillDesignerList(){
+      const sel = document.getElementById('designerSelect');
+      const names = [...new Set(RAW.map(r=>r.Designer).filter(Boolean))].sort((a,b)=> a.localeCompare(b));
+      sel.innerHTML = '<option value="">Select designer</option>' + names.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+    }
+
+    // تصدير CSV (يحفظ رابط الـ Link كنص داخل الملف)
+    function exportCSV(){
+      if (!FILTERED.length){ return; }
+      const rows = FILTERED.map(r=>{
+        const o={};
+        COLUMNS.forEach(col=>{
+          if (col==='Date') o[col]=fmtDDMMYYYY_UTC(r.__date);
+          else if (col==='Creator') o[col]= (r.__raw['Client'] ?? '');
+          else o[col]= (r.__raw[col]!==undefined && r.__raw[col]!==null) ? r.__raw[col] : '';
+        });
+        return o;
+      });
+      const csv = toCSV(rows, COLUMNS);
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'designer_tasks.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+    function toCSV(data, cols){
+      const esc = v => `"${String(v).replace(/"/g,'""')}"`;
+      const header = cols.map(esc).join(',');
+      const lines = data.map(row => cols.map(c => esc(row[c] ?? '')).join(','));
+      return [header, ...lines].join('\n');
+    }
+
+    // تصدير Excel
+    function exportXLSX(){
+      if (!FILTERED.length){ return; }
+      const rows = FILTERED.map(r=>{
+        const o={};
+        COLUMNS.forEach(col=>{
+          if (col==='Date') o[col]=fmtDDMMYYYY_UTC(r.__date);
+          else if (col==='Creator') o[col]= (r.__raw['Client'] ?? '');
+          else o[col]= (r.__raw[col]!==undefined && r.__raw[col]!==null) ? r.__raw[col] : '';
+        });
+        return o;
+      });
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows, { header: COLUMNS });
+      XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
+      XLSX.writeFile(wb, 'designer_tasks.xlsx');
+    }
+
+    // طباعة
+    function doPrint(){ window.print(); }
+
+    // تنظيف الفلاتر
+    function clearFilters(){
+      document.getElementById('designerSelect').value = '';
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
+      document.getElementById('searchBox').value = '';
+      applyFilters();
+    }
+
+    // INIT
+    (async function init(){
+      RAW = await loadData();
+      if (!RAW.length){
+        document.getElementById('emptyState').style.display='block';
+        return;
+      }
+      fillDesignerList();
+
+      // Events
+      document.getElementById('btnApply').addEventListener('click', applyFilters);
+      document.getElementById('btnClear').addEventListener('click', clearFilters);
+      document.getElementById('btnCSV').addEventListener('click', exportCSV);
+      document.getElementById('btnXLSX').addEventListener('click', exportXLSX);
+      document.getElementById('btnPrint').addEventListener('click', doPrint);
+
+      // بحث لحظي
+      document.getElementById('searchBox').addEventListener('input', applyFilters);
+      document.getElementById('designerSelect').addEventListener('change', applyFilters);
+      document.getElementById('fromDate').addEventListener('change', applyFilters);
+      document.getElementById('toDate').addEventListener('change', applyFilters);
+
+      applyFilters();
+    })();
+  </script>
+</body>
+</html>
