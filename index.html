@@ -38,35 +38,24 @@
 <body>
   <div class="container py-4">
 
-    <!-- الشعار -->
+    <!-- Logo -->
     <div class="d-flex align-items-center justify-content-center mb-2">
       <img src="https://ramymaraei.github.io/banner-checker/ALFAN_LOGO-Small.png" alt="ALFAN Logo" style="max-height:56px;">
     </div>
-    <!-- العنوان -->
+    <!-- Title -->
     <div class="d-flex align-items-center justify-content-center mb-3">
       <h1 class="fs-4 m-0 text-center">DESIGN TEAM DASHBOARD</h1>
     </div>
 
     <div class="card p-3 mb-3">
       <div class="row g-2 align-items-end">
-        <div class="col-md-3">
-          <label class="form-label">Year</label>
-          <select id="yearSelect" class="form-select"><option value="all">All</option></select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">From</label>
-          <input id="fromDate" type="date" class="form-control" />
-          <div class="muted" id="fromDateDisp"></div>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">To</label>
-          <input id="toDate" type="date" class="form-control" />
-          <div class="muted" id="toDateDisp"></div>
-        </div>
+        <div class="col-md-3"><label class="form-label">Year</label><select id="yearSelect" class="form-select"><option value="all">All</option></select></div>
+        <div class="col-md-3"><label class="form-label">From</label><input id="fromDate" type="date" class="form-control" /><div class="muted" id="fromDateDisp"></div></div>
+        <div class="col-md-3"><label class="form-label">To</label><input id="toDate" type="date" class="form-control" /><div class="muted" id="toDateDisp"></div></div>
         <div class="col-md-3 d-flex gap-2">
           <button id="btnThisWeek" class="btn btn-outline-light w-100">This Week</button>
-          <button id="btnClear" class="btn btn-outline-light w-100">Clear</button>
           <button id="btnApply" class="btn btn-primary w-100">Apply</button>
+          <button id="btnClear" class="btn btn-outline-light w-100">Clear</button>
         </div>
       </div>
     </div>
@@ -88,7 +77,7 @@
       </div>
     </div>
 
-    <!-- شهري + سنوي -->
+    <!-- Monthly + Yearly -->
     <div class="card p-3 mt-3">
       <div class="row g-3">
         <div class="col-md-6">
@@ -112,6 +101,7 @@
         <div id="clientSuggest" class="typeahead-list" style="display:none;"></div>
       </div>
 
+      <!-- Fallback select -->
       <select id="clientSelect" class="form-select form-select-sm mb-2 mt-2"></select>
 
       <div id="clientTotal" class="mb-2"></div>
@@ -133,56 +123,40 @@
   const CHART_BASE = CSS.getPropertyValue('--chart-base').trim() || '#21000E';
   const HEAD_RED = CSS.getPropertyValue('--red').trim() || '#ff002b';
 
-  // ألوان ثابتة لكل نوع - اختيارات واضحة
-const TYPE_COLOR_MAP = {
-  'Snap Tiles': '#fbbc04',             // Snapchat Tile - أصفر
-  'Snap Theme': '#ffd966',
-  'Banners': '#990000',                 // YouTube Banner - أحمر
-  'Thumbnails': '#3c78d8',
-  'Covers': '#351c75',
-  'Edit Covers': '#674ea7',
-  'Logos / Typography': '#c27ba0',
-  'Unknown': '#9ca3af'
-};
+  // ثابت ألوان موحّد لكل نوع
+  const TYPE_COLOR_MAP = {
+    'Snap Tiles': '#fbbc04',             // Snapchat Tile - أصفر
+    'Snap Theme': '#ffd966',
+    'Banners': '#990000',                 // YouTube Banner - أحمر
+    'Thumbnails': '#3c78d8',
+    'Covers': '#351c75',
+    'Edit Covers': '#674ea7',
+    'Logos / Typography': '#c27ba0',
+    'Unknown': '#9ca3af'
+  };
 
-// توحيد أسماء الأنواع المختلفة لنفس النوع
-function canonicalType(raw){
-  if(!raw) return 'Unknown';
-  const s = String(raw).trim().toLowerCase();
+  // توحيد أسماء الأنواع
+  function canonicalType(raw){
+    if(!raw) return 'Unknown';
+    const s = String(raw).trim().toLowerCase();
 
-  // Snapchat Tile
-  if (['snap tiles','snap tile','snapchat tile','snapchat tiles','snap-tiles'].includes(s)) return 'Snap Tiles';
+    if (['snap tiles','snap tile','snapchat tile','snapchat tiles','snap-tiles'].includes(s)) return 'Snap Tiles';
+    if (['snap theme','snapchat theme'].includes(s)) return 'Snap Theme';
+    if (['banners','banner','youtube banner','yt banner','youtube banners'].includes(s)) return 'Banners';
+    if (['thumbnails','thumbnail','youtube thumbnail','yt thumbnail'].includes(s)) return 'Thumbnails';
+    if (['covers','cover'].includes(s)) return 'Covers';
+    if (['edit covers','cover edit','edit cover'].includes(s)) return 'Edit Covers';
+    if ([
+      'logos / typography','logo / typography','logos & typography','logo&typography',
+      'logos','logo','typography'
+    ].includes(s)) return 'Logos / Typography';
 
-  // Snap Theme
-  if (['snap theme','snapchat theme'].includes(s)) return 'Snap Theme';
-
-  // Banners - YouTube Banner
-  if (['banners','banner','youtube banner','yt banner','youtube banners'].includes(s)) return 'Banners';
-
-  // Thumbnails
-  if (['thumbnails','thumbnail','youtube thumbnail','yt thumbnail'].includes(s)) return 'Thumbnails';
-
-  // Covers
-  if (['covers','cover'].includes(s)) return 'Covers';
-
-  // Edit Covers
-  if (['edit covers','cover edit','edit cover'].includes(s)) return 'Edit Covers';
-
-  // Logos / Typography
-  if ([
-    'logos / typography','logo / typography','logos & typography','logo&typography',
-    'logos','logo','typography'
-  ].includes(s)) return 'Logos / Typography';
-
-  // لو مش مطابق لأي حاجة، ارجع الخام
-  return String(raw).trim();
-}
-
-// لون النوع بعد التوحيد
-function colorForType(name){
-  const key = canonicalType(name);
-  return TYPE_COLOR_MAP[key] || TYPE_COLOR_MAP['Unknown'];
-}
+    return String(raw).trim();
+  }
+  function colorForType(name){
+    const key = canonicalType(name);
+    return TYPE_COLOR_MAP[key] || TYPE_COLOR_MAP['Unknown'];
+  }
 
   const CALM_FALLBACKS = ['#6b7280','#9ca3af','#94a3b8','#a3b18a','#bdb2ff','#8ecae6','#bde0fe','#a8dadc'];
 
@@ -238,11 +212,6 @@ function colorForType(name){
 
   // ===== Data utils =====
   function sumQty(rows){ let t=0; for (const r of rows) t += normalizeQty(r.qty); return t; }
-  function uniqueDayCount(rows){
-    const s = new Set();
-    for (const r of rows){ s.add(fmtDDMMYYYY_UTC(r.date)); }
-    return s.size;
-  }
 
   async function loadData(){
     try{
@@ -310,24 +279,38 @@ function colorForType(name){
     designers.forEach(d=>{
       const byType = {};
       data.filter(r=>r.designer===d).forEach(r=>{
-        const k=r.type||'Unknown';
+        const k = canonicalType(r.type) || 'Unknown';
         byType[k]=(byType[k]||0)+normalizeQty(r.qty);
       });
-      const labels = Object.keys(byType); const series = labels.map(k=>byType[k]);
+      const labels = Object.keys(byType);
+      const series = labels.map(k=>byType[k]);
+      const colors = labels.map(label => colorForType(label));
+
       const wrap = document.createElement('div'); wrap.className='col-12 col-md-4'; const div = document.createElement('div'); wrap.appendChild(div); container.appendChild(wrap);
-      new ApexCharts(div,{ chart:{type:'pie', height:300}, series, labels, title:{ text:d, style:{ color: HEAD_RED } } }).render();
+      new ApexCharts(div,{
+        chart:{type:'pie', height:300, foreColor: CHART_BASE},
+        series, labels, colors,
+        title:{ text:d, style:{ color: HEAD_RED } },
+        legend:{ position:'bottom' }
+      }).render();
     });
   }
 
   function drawTypeBar(data){
     const byType = {};
     data.forEach(r=>{
-      const k=r.type||'Unknown';
+      const k = canonicalType(r.type) || 'Unknown';
       byType[k]=(byType[k]||0)+normalizeQty(r.qty);
     });
     const cats = Object.keys(byType), vals = cats.map(k=>byType[k]);
-    const colors = cats.map((t,i)=> TYPE_COLORS[t] || CALM_FALLBACKS[i % CALM_FALLBACKS.length]);
-    const opts = { chart:{type:'bar', height:350, foreColor:CHART_BASE}, colors, series:[{name:'Quantity', data:vals}], xaxis:{ categories: cats }, dataLabels:{enabled:false} };
+    const colors = cats.map(t=> colorForType(t));
+    const opts = {
+      chart:{type:'bar', height:350, foreColor:CHART_BASE},
+      colors,
+      series:[{name:'Quantity', data:vals}],
+      xaxis:{ categories: cats },
+      dataLabels:{enabled:false}
+    };
     if(typeBarChart){ typeBarChart.destroy(); typeBarChart=null; }
     typeBarChart = new ApexCharts(document.querySelector('#typeBar'), opts); typeBarChart.render();
   }
@@ -340,7 +323,7 @@ function colorForType(name){
     });
     const cats   = Object.keys(byType);
     const vals   = cats.map(k => byType[k]);
-    const colors = cats.map((t,i)=> TYPE_COLORS[t] || CALM_FALLBACKS[i % CALM_FALLBACKS.length]);
+    const colors = cats.map(t => colorForType(t));
     const opts = {
       chart:{ type:'pie', height:350, foreColor: CHART_BASE },
       colors,
@@ -414,7 +397,6 @@ function colorForType(name){
     const byType = {};
     rows.forEach(r=>{
       const k = canonicalType(r.type) || 'Unknown';
-
       byType[k] = (byType[k] || 0) + normalizeQty(r.qty);
     });
     typesEl.innerHTML = '<ul>' + Object.entries(byType)
@@ -426,7 +408,7 @@ function colorForType(name){
 
     const lastDate = rows.length ? new Date(Math.max(...rows.map(r => r.date.getTime()))) : null;
     if (lastEl){
-      lastEl.innerHTML = `<strong>Last Design Date:</strong> ${lastDate ? fmtDDMMYYYY_UTC(lastDate) : '-'}`;
+      lastEl.innerHTML = `<strong>Last Design Date:</strong> ${lastDate ? fmtDDMMYYYY_UTC(lastDate) : '—'}`;
     }
   }
 
@@ -436,7 +418,7 @@ function colorForType(name){
     if(keep && current && list.includes(current)) sel.value = current; else sel.selectedIndex = 0;
   }
 
-  // ===== Typeahead للعملاء =====
+  // ===== Typeahead =====
   let TA_INDEX = -1;
   function escHTML(s){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
   function highlightMatch(text, q){
@@ -501,16 +483,19 @@ function colorForType(name){
 
     LAST_FILTERED = filtered;
 
+    // KPI: Year total
     document.getElementById('kpiYearTotal').textContent = sumQty(yearBase);
+
+    // KPI: Range total
     document.getElementById('kpiRangeTotal').textContent = sumQty(filtered);
 
-    // Daily Average حسب عدد الأيام الظاهرة
-    const daysShown = uniqueDayCount(filtered);
-    document.getElementById('kpiRangeAvg').textContent = daysShown ? (sumQty(filtered)/daysShown).toFixed(2) : '--';
+    // KPI: Daily Average = على عدد الأيام الظاهرة فعليًا
+    const visibleDays = new Set(filtered.map(r => fmtDDMMYYYY_UTC(r.date))).size;
+    document.getElementById('kpiRangeAvg').textContent = visibleDays ? (sumQty(filtered)/visibleDays).toFixed(2) : '--';
 
-    // حذف كلمة Selected:
-  document.getElementById('fromDateDisp').textContent = '';
-document.getElementById('toDateDisp').textContent = '';
+    // امسح أي نص تحت حقول التاريخ
+    document.getElementById('fromDateDisp').textContent = '';
+    document.getElementById('toDateDisp').textContent = '';
 
     drawMainArea(filtered);
     drawDesignerTotals(filtered);
@@ -519,6 +504,7 @@ document.getElementById('toDateDisp').textContent = '';
     drawTypePie(filtered);
     drawMonthsBar(yearBase, yearVal);
 
+    // إجمالي السنة الحالية حتى اليوم
     const now = new Date();
     const todayLocal = toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
     const currentYear = todayLocal.getUTCFullYear();
@@ -543,33 +529,22 @@ document.getElementById('toDateDisp').textContent = '';
     renderClientOptions(CLIENTS, false);
 
     document.getElementById('btnApply').addEventListener('click', applyFilters);
-
-    // This Week: Monday → Sunday
+    document.getElementById('btnClear').addEventListener('click', ()=>{
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value   = '';
+      applyFilters();
+    });
     document.getElementById('btnThisWeek').addEventListener('click', ()=>{
       const now = new Date();
-      const day = now.getDay();
+      const day = now.getDay(); // 0 Sun .. 6 Sat
       const diffToMon = (day===0? -6 : 1-day);
       const monLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate()+diffToMon);
       const sunLocal = new Date(monLocal.getFullYear(), monLocal.getMonth(), monLocal.getDate()+6);
       const toISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       document.getElementById('fromDate').value = toISO(monLocal);
-      document.getElementById('toDate').value = toISO(sunLocal);
+      document.getElementById('toDate').value   = toISO(sunLocal);
       applyFilters();
     });
-
-    // Clear filter
-    document.getElementById('btnClear').addEventListener('click', ()=>{
-      document.getElementById('fromDate').value = '';
-      document.getElementById('toDate').value = '';
-      document.getElementById('fromDateDisp').textContent = '';
-      document.getElementById('toDateDisp').textContent = '';
-      document.getElementById('clientSearch').value = '';
-      document.getElementById('clientSelect').selectedIndex = 0;
-      const suggestBox = document.getElementById('clientSuggest');
-      suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; // اخفاء اقتراحات البحث
-      applyFilters();
-    });
-
     yearSelect.addEventListener('change', applyFilters);
     document.getElementById('clientSelect').addEventListener('change', ()=> updateClientDetails(LAST_FILTERED));
 
@@ -608,6 +583,3 @@ document.getElementById('toDateDisp').textContent = '';
 
 </body>
 </html>
-
-
-
