@@ -461,8 +461,8 @@
     document.getElementById('kpiRangeAvg').textContent = daysShown ? (sumQty(filtered)/daysShown).toFixed(2) : '--';
 
     // حذف كلمة Selected:
-    document.getElementById('fromDateDisp').textContent = fromUTC ? fmtDDMMYYYY_UTC(fromUTC) : '';
-    document.getElementById('toDateDisp').textContent = toUTC ? fmtDDMMYYYY_UTC(toUTC) : '';
+  document.getElementById('fromDateDisp').textContent = '';
+document.getElementById('toDateDisp').textContent = '';
 
     drawMainArea(filtered);
     drawDesignerTotals(filtered);
@@ -560,3 +560,4 @@
 
 </body>
 </html>
+
