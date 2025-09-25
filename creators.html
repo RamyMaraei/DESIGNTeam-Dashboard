@@ -4,9 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CREATORS DASHBOARD</title>
+
+  <!-- Bootstrap + Font -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --bg:#f4f0ed; --text:#21000e; --box:#ffffff; --border:#21000e22;
@@ -15,21 +19,31 @@
     }
     body{ background:var(--bg); color:var(--text); font-family:'Alexandria',sans-serif; }
     .card{ background:var(--box); border:1px solid var(--border); }
-    .btn-primary{ background:var(--red)!important; border-color:var(--red)!important; }
+    .form-select,.form-control{ background:var(--control); color:var(--text); border-color:var(--control-border); }
+    .btn-primary,.btn-outline-light{ background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; }
     h1,.form-label{ color:var(--red); }
     a{ color:var(--link); }
-    .expand-row{ background:#fafafa; }
+    .toolbar{ display:flex; gap:.5rem; align-items:center; margin-bottom:1rem; }
+    .toolbar .right{ margin-left:auto; display:flex; gap:.5rem; }
+    .expand-details{ background:#fafafa; border-top:1px solid var(--border); padding:1rem; }
+    .muted{ color:#6b7280; font-size:.85rem; }
+    footer{ text-align:center; padding:1rem; font-size:.9rem; color:var(--text); border-top:1px solid var(--border); margin-top:1rem; }
   </style>
 </head>
 <body>
   <div class="container py-4">
-    <!-- Logo -->
-    <div class="d-flex justify-content-center mb-2">
+
+    <!-- الشعار -->
+    <div class="d-flex align-items-center justify-content-center mb-2">
       <img src="https://ramymaraei.github.io/banner-checker/ALFAN_LOGO-Small.png" alt="ALFAN Logo" style="max-height:56px;">
     </div>
-    <h1 class="text-center fs-4 mb-4">CREATORS DASHBOARD</h1>
 
-    <!-- Filters -->
+    <!-- العنوان -->
+    <div class="d-flex align-items-center justify-content-center mb-3">
+      <h1 class="fs-4 m-0 text-center">CREATORS DASHBOARD</h1>
+    </div>
+
+    <!-- أدوات التحكم -->
     <div class="card p-3 mb-3">
       <div class="row g-2 align-items-end">
         <div class="col-md-3">
@@ -40,125 +54,166 @@
           <label class="form-label">To</label>
           <input id="toDate" type="date" class="form-control" />
         </div>
-        <div class="col-md-3 d-flex gap-2">
+        <div class="col-md-3">
           <button id="btnApply" class="btn btn-primary w-100">Apply</button>
-          <a href="index.html" class="btn btn-outline-light w-100">Back</a>
+        </div>
+        <div class="col-md-3">
+          <a href="index.html" class="btn btn-primary w-100">Back</a>
         </div>
       </div>
     </div>
 
-    <!-- Chart Top 10 -->
+    <!-- Chart -->
     <div class="card p-3 mb-3">
       <h2 class="fs-6 mb-3" style="color:var(--red)">Top 10 Creators</h2>
-      <div id="topCreatorsChart"></div>
+      <div id="topChart"></div>
     </div>
 
-    <!-- Creators Table -->
+    <!-- Toolbar above table -->
+    <div class="toolbar">
+      <span style="font-weight:600;">Creators List</span>
+      <div class="right">
+        <button id="btnCSV" class="btn btn-primary btn-sm">Export CSV</button>
+        <button id="btnXLSX" class="btn btn-primary btn-sm">Export Excel</button>
+      </div>
+    </div>
+
+    <!-- Table -->
     <div class="card p-3">
       <div class="table-responsive">
-        <table class="table table-sm align-middle">
-          <thead><tr><th>Creator</th><th>Total Designs</th><th>Top Category</th><th></th></tr></thead>
-          <tbody id="creatorsBody"></tbody>
+        <table class="table table-sm table-striped align-middle" id="creatorsTable">
+          <thead>
+            <tr><th>Creator</th><th>Total Designs</th><th>Top Type</th><th>Details</th></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
         </table>
       </div>
     </div>
+
+    <!-- Footer -->
+    <footer>
+      شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Dashboard - Ramy Maraei © 2025
+    </footer>
+
   </div>
 
-<script>
-const SHEET_API = 'https://script.google.com/macros/s/AKfycbzl7CV83GMqgUMEK7CZlAJ-2s4aruOYeistkcpX_6mozP_e4c3DG4eMIEN7GQZcx4B6/exec';
+  <script>
+    const SHEET_API = 'https://script.google.com/macros/s/AKfycbzl7CV83GMqgUMEK7CZlAJ-2s4aruOYeistkcpX_6mozP_e4c3DG4eMIEN7GQZcx4B6/exec';
+    let RAW = [];
 
-function parseQty(v){ const n=Number(String(v??'').replace(/[^0-9.-]/g,'')); return Number.isFinite(n)?n:0; }
-function parseDate(v){ if(!v) return null; const d=new Date(v); return isNaN(d)?null:new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); }
-function fmt(d){ return d?`${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`:''; }
+    function normalizeQty(v){
+      if (!v) return 0;
+      let s = String(v).trim().replace(/,/g,'');
+      return parseFloat(s)||0;
+    }
 
-let RAW=[];
+    async function loadData(){
+      const res = await fetch(SHEET_API);
+      const json = await res.json();
+      return (Array.isArray(json)?json:[]).map(r=>({
+        date: new Date(r.Date),
+        creator: r.Client||'',
+        type: r.Type||'Unknown',
+        designer: r.Designer||'',
+        qty: normalizeQty(r.Quantity)
+      }));
+    }
 
-async function loadData(){
-  const res=await fetch(SHEET_API,{cache:'no-store'});
-  const json=await res.json();
-  return (Array.isArray(json)?json:[]).map(r=>({
-    date: parseDate(r.Date),
-    client: r.Client||'',
-    qty: parseQty(r.Quantity),
-    type: r.Type||'Unknown',
-    designer: r.Designer||'',
-    channel: r['Channel ID']||''
-  })).filter(r=>r.date);
-}
+    function groupData(rows){
+      const map = {};
+      rows.forEach(r=>{
+        if(!map[r.creator]) map[r.creator]={total:0,byType:{},designers:new Set()};
+        map[r.creator].total += r.qty;
+        map[r.creator].byType[r.type]=(map[r.creator].byType[r.type]||0)+r.qty;
+        map[r.creator].designers.add(r.designer);
+      });
+      return map;
+    }
 
-function groupCreators(rows){
-  const map={};
-  rows.forEach(r=>{
-    if(!map[r.client]) map[r.client]={total:0,types:{},designers:new Set(),channels:new Set()};
-    map[r.client].total+=r.qty;
-    map[r.client].types[r.type]=(map[r.client].types[r.type]||0)+r.qty;
-    if(r.designer) map[r.client].designers.add(r.designer);
-    if(r.channel) map[r.client].channels.add(r.channel);
-  });
-  return map;
-}
+    function renderTable(map){
+      const body=document.getElementById('tableBody');
+      body.innerHTML='';
+      const creators=Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+      creators.forEach(([creator,data])=>{
+        const topType=Object.entries(data.byType).sort((a,b)=>b[1]-a[1])[0]||['—',0];
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${creator}</td>
+          <td>${data.total}</td>
+          <td>${topType[0]} (${topType[1]})</td>
+          <td><button class="btn btn-primary btn-sm" data-creator="${creator}">Details</button></td>`;
+        body.appendChild(tr);
 
-function renderTable(map){
-  const body=document.getElementById('creatorsBody');
-  body.innerHTML='';
-  const sorted=Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
-  sorted.forEach(([name,info],idx)=>{
-    const topType=Object.entries(info.types).sort((a,b)=>b[1]-a[1])[0]||['—',0];
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${name}</td><td>${info.total}</td><td>${topType[0]} (${topType[1]})</td><td><button class='btn btn-sm btn-outline-light' data-id='${idx}'>Details</button></td>`;
-    body.appendChild(tr);
-    const expand=document.createElement('tr');
-    expand.className='expand-row';
-    expand.style.display='none';
-    expand.innerHTML=`<td colspan='4'>
-      <div><strong>Types:</strong> ${Object.entries(info.types).map(([t,v])=>`${t} (${v})`).join(', ')||'—'}</div>
-      <div><strong>Designers:</strong> ${[...info.designers].join(', ')||'—'}</div>
-      <div><strong>Channels:</strong> ${[...info.channels].join(', ')||'—'}</div>
-    </td>`;
-    body.appendChild(expand);
-  });
-  body.querySelectorAll('button').forEach((btn,i)=>{
-    btn.addEventListener('click',()=>{
-      const row=body.querySelectorAll('.expand-row')[i];
-      row.style.display=row.style.display==='none'?'table-row':'none';
-    });
-  });
-}
+        const details=document.createElement('tr');
+        details.style.display='none';
+        details.classList.add('expand-details-row');
+        details.innerHTML=`<td colspan="4">
+          <div class="expand-details">
+            <strong>Types:</strong><br>
+            ${Object.entries(data.byType).map(([t,v])=>`${t}: ${v}`).join('<br>')}<br>
+            <strong>Designers:</strong> ${[...data.designers].join(', ')||'—'}
+          </div>
+        </td>`;
+        body.appendChild(details);
 
-function renderChart(map){
-  const sorted=Object.entries(map).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
-  const labels=sorted.map(([n])=>n);
-  const series=sorted.map(([,v])=>v.total);
-  const options={
-    chart:{type:'bar',height:350,foreColor:'var(--chart-base)',fontFamily:'Alexandria, sans-serif'},
-    series:[{name:'Designs',data:series}],
-    xaxis:{categories:labels},
-    colors:['var(--chart-base)'],
-    dataLabels:{enabled:false}
-  };
-  document.querySelector('#topCreatorsChart').innerHTML='';
-  new ApexCharts(document.querySelector('#topCreatorsChart'),options).render();
-}
+        tr.querySelector('button').addEventListener('click',()=>{
+          details.style.display=details.style.display==='none'?'':'none';
+        });
+      });
+    }
 
-function applyFilters(){
-  const from=document.getElementById('fromDate').value;
-  const to=document.getElementById('toDate').value;
-  const fromD=from?parseDate(from):null;
-  const toD=to?parseDate(to):null;
-  let rows=RAW;
-  if(fromD) rows=rows.filter(r=>r.date>=fromD);
-  if(toD) rows=rows.filter(r=>r.date<=toD);
-  const map=groupCreators(rows);
-  renderTable(map);
-  renderChart(map);
-}
+    function renderChart(map){
+      const creators=Object.entries(map).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+      const labels=creators.map(c=>c[0]);
+      const data=creators.map(c=>c[1].total);
+      new ApexCharts(document.querySelector('#topChart'),{
+        chart:{type:'bar',height:350,toolbar:{show:false}},
+        series:[{name:'Designs',data:data}],
+        xaxis:{categories:labels},
+        colors:['#21000E']
+      }).render();
+    }
 
-(async function init(){
-  RAW=await loadData();
-  document.getElementById('btnApply').addEventListener('click',applyFilters);
-  applyFilters();
-})();
-</script>
+    function exportCSV(map){
+      const creators=Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+      let csv='Creator,Total Designs\n';
+      creators.forEach(([c,d])=>{csv+=`"${c}",${d.total}\n`;});
+      const blob=new Blob([csv],{type:'text/csv'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download='creators.csv';a.click();URL.revokeObjectURL(url);
+    }
+
+    function exportXLSX(map){
+      const creators=Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+      const rows=creators.map(([c,d])=>({Creator:c,Total:d.total}));
+      const wb=XLSX.utils.book_new();
+      const ws=XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb,ws,'Creators');
+      XLSX.writeFile(wb,'creators.xlsx');
+    }
+
+    (async function init(){
+      RAW=await loadData();
+      const from=document.getElementById('fromDate');
+      const to=document.getElementById('toDate');
+      document.getElementById('btnApply').addEventListener('click',()=>{
+        let filtered=RAW;
+        if(from.value) filtered=filtered.filter(r=>r.date>=new Date(from.value));
+        if(to.value) filtered=filtered.filter(r=>r.date<=new Date(to.value));
+        const map=groupData(filtered);
+        renderTable(map);
+        document.getElementById('topChart').innerHTML='';
+        renderChart(map);
+      });
+
+      document.getElementById('btnCSV').addEventListener('click',()=>exportCSV(groupData(RAW)));
+      document.getElementById('btnXLSX').addEventListener('click',()=>exportXLSX(groupData(RAW)));
+
+      const map=groupData(RAW);
+      renderTable(map);
+      renderChart(map);
+    })();
+  </script>
 </body>
 </html>
-
