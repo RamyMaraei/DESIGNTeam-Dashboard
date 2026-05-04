@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ALFAN DESIGN TOOLS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{ --bg: #f4f0ed; --text: #21000e; --box: #ffffff; --border: #21000e22; --control: #ffffff; --control-border:#21000e55; --red: #ff002b; --chart-base: #21000E; --link: #ff002b; }
+    body { background: var(--bg); color: var(--text); font-family: 'Alexandria', sans-serif; }
+    .card { background: var(--box); border: 1px solid var(--border); }
+    h1, .form-label { color: var(--red); }
+    .muted { color: #6b7280; font-size: .8rem; }
+    footer { text-align: center; padding: 1rem; font-size: 0.9rem; color: var(--text); border-top: 1px solid var(--border); margin-top: 1rem; }
+
+    .tools-intro{
+      max-width: 760px;
+      margin: 0 auto 1.5rem;
+      text-align:center;
+      color: var(--text);
+      font-size:.95rem;
+      line-height:1.8;
+    }
+
+    .tools-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:1rem;
+    }
+
+    .tool-card{
+      display:flex;
+      flex-direction:column;
+      height:100%;
+      text-decoration:none;
+      color:var(--text);
+      border-radius:18px;
+      overflow:hidden;
+      background:var(--box);
+      border:1px solid var(--border);
+      box-shadow:0 8px 22px rgba(33,0,14,.06);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .tool-card:hover{
+      color:var(--text);
+      transform:translateY(-3px);
+      box-shadow:0 14px 34px rgba(33,0,14,.12);
+      border-color:rgba(255,0,43,.35);
+    }
+
+    .tool-image{
+      height:150px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:
+        radial-gradient(circle at top left, rgba(255,0,43,.18), transparent 35%),
+        linear-gradient(135deg, #21000e 0%, #3a0019 55%, #ff002b 160%);
+      color:#fff;
+      position:relative;
+    }
+    .tool-image::after{
+      content:"";
+      position:absolute;
+      inset:12px;
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:14px;
+      pointer-events:none;
+    }
+    .tool-icon{
+      width:74px;
+      height:74px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:24px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.25);
+      font-size:2.25rem;
+      font-weight:800;
+      line-height:1;
+      backdrop-filter: blur(6px);
+    }
+    .tool-body{
+      padding:1rem;
+      text-align:center;
+    }
+    .tool-title{
+      margin:0;
+      font-size:1rem;
+      font-weight:800;
+      color:var(--text);
+    }
+    .tool-subtitle{
+      margin:.45rem 0 0;
+      font-size:.78rem;
+      color:#6b7280;
+      line-height:1.6;
+    }
+
+    .tool-card.dual-link{
+      cursor:default;
+    }
+    .tool-links{
+      display:flex;
+      gap:.45rem;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:.85rem;
+    }
+    .tool-mini-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      color:var(--red) !important;
+      border:1px solid var(--red);
+      border-radius:9999px;
+      padding:.35rem .65rem;
+      font-size:.76rem;
+      font-weight:700;
+      line-height:1;
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .tool-mini-link:hover{
+      background:var(--red);
+      color:#fff !important;
+    }
+
+    .back-action{
+      display:flex;
+      justify-content:center;
+      margin-bottom:1rem;
+    }
+    .btn-back{
+      display:inline-flex;
+      align-items:center;
+      gap:.5rem;
+      background: var(--red) !important;
+      color:#fff !important;
+      border: 1px solid var(--red) !important;
+      border-radius: 9999px;
+      padding:.45rem .9rem;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow: 0 4px 14px rgba(255,0,43,.15);
+    }
+    .btn-back:hover{
+      filter: brightness(0.95);
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+
+    <!-- Logo -->
+    <div class="d-flex align-items-center justify-content-center mb-2">
+      <img src="https://ramymaraei.github.io/banner-checker/ALFAN_LOGO-Small.png" alt="ALFAN Logo" style="max-height:56px;">
+    </div>
+
+    <!-- Title -->
+    <div class="d-flex align-items-center justify-content-center mb-2">
+      <h1 class="fs-4 m-0 text-center">ALFAN DESIGN TOOLS</h1>
+    </div>
+
+    <div class="tools-intro">
+      A quick access hub for the tools and pages created to support the design team workflow.
+    </div>
+
+    <div class="back-action">
+      <a href="index.html" class="btn-back" title="Back to Dashboard">Back to Dashboard</a>
+    </div>
+
+    <div class="tools-grid">
+      <a href="https://ramymaraei.github.io/DESIGNTeam-Dashboard/index.html" target="_blank" rel="noopener" class="tool-card" title="DESIGN TEAM DASHBOARD">
+        <div class="tool-image">
+          <div class="tool-icon">DT</div>
+        </div>
+        <div class="tool-body">
+          <h2 class="tool-title">DESIGN TEAM DASHBOARD</h2>
+          <p class="tool-subtitle">Main dashboard for design team tracking and overview.</p>
+        </div>
+      </a>
+
+      <a href="https://ramymaraei.github.io/banner-checker" target="_blank" rel="noopener" class="tool-card" title="YouTube Banner Checker">
+        <div class="tool-image">
+          <div class="tool-icon">BC</div>
+        </div>
+        <div class="tool-body">
+          <h2 class="tool-title">YouTube Banner Checker</h2>
+          <p class="tool-subtitle">Check YouTube channel banner availability and status.</p>
+        </div>
+      </a>
+
+      <a href="https://ramymaraei.github.io/thumbnail-checker" target="_blank" rel="noopener" class="tool-card" title="YouTube Thumbnail Checker">
+        <div class="tool-image">
+          <div class="tool-icon">TC</div>
+        </div>
+        <div class="tool-body">
+          <h2 class="tool-title">YouTube Thumbnail Checker</h2>
+          <p class="tool-subtitle">Review uploaded YouTube thumbnails and visual status.</p>
+        </div>
+      </a>
+
+      <div class="tool-card dual-link" title="YouTube Channel Media Tool">
+        <div class="tool-image">
+          <div class="tool-icon">YT</div>
+        </div>
+        <div class="tool-body">
+          <h2 class="tool-title">YouTube Channel Media Tool</h2>
+          <p class="tool-subtitle">Access the GitHub version or the Alfan hosted version.</p>
+          <div class="tool-links">
+            <a href="https://ramymaraei.github.io/youtube-channel-media-backend" target="_blank" rel="noopener" class="tool-mini-link" title="GitHub Version">GitHub version</a>
+            <a href="https://assets.alfangroup.com" target="_blank" rel="noopener" class="tool-mini-link" title="Alfan Version">Alfan version</a>
+          </div>
+        </div>
+      </div>
+
+      <a href="https://ramymaraei.github.io/banner-checker/QRCodeReader.html" target="_blank" rel="noopener" class="tool-card" title="QR Code Web Scanner">
+        <div class="tool-image">
+          <div class="tool-icon">QR</div>
+        </div>
+        <div class="tool-body">
+          <h2 class="tool-title">QR Code Web Scanner</h2>
+          <p class="tool-subtitle">Scan QR codes directly from the web browser.</p>
+        </div>
+      </a>
+
+      <a href="https://design.alfangroup.com" target="_blank" rel="noopener" class="tool-card" title="Alfan Design AI Tools">
+        <div class="tool-image">
+          <div class="tool-icon">AI</div>
+        </div>
+        <div class="tool-body">
+          <h2 class="tool-title">Alfan Design AI Tools</h2>
+          <p class="tool-subtitle">AI tools hub for design and creative workflow support.</p>
+        </div>
+      </a>
+    </div>
+
+    <footer>
+      شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - Design Tools Hub - Ramy Maraei © <span id="yearNow"></span>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('yearNow').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
