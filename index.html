@@ -112,26 +112,29 @@
 
 <!-- Actions: Details + Quick Tools (centered) -->
 <div class="qa-wrap">
-  <!-- زر التفاصيل بسطر مستقل ومعاه أيقونة -->
-  <a href="designer-tasks.html" class="btn btn-details" title="Designer Tasks">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0 -2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2V8z"></path>
-      <polyline points="14 2 14 8 20 8"></polyline>
-      <line x1="16" y1="13" x2="8" y2="13"></line>
-      <line x1="16" y1="17" x2="8" y2="17"></line>
-      <line x1="10" y1="9" x2="8" y2="9"></line>
-    </svg>
-    <span>Details</span>
-  </a>
+  <!-- زر التفاصيل وزر الأدوات في نفس السطر -->
+  <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+    <a href="designer-tasks.html" class="btn btn-details" title="Designer Tasks">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0 -2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <line x1="10" y1="9" x2="8" y2="9"></line>
+      </svg>
+      <span>Details</span>
+    </a>
+
+    <a href="tools.html" class="btn btn-details" title="Tools">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8 -3.8a6 6 0 0 1 -7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1 -3 -3l6.9 -6.9a6 6 0 0 1 7.9 -7.9l-3.8 3.8z"></path>
+      </svg>
+      <span>Tools</span>
+    </a>
+  </div>
 
   <!-- الأزرار الصغيرة في المنتصف -->
  <div class="quick-actions">
-  <a href="https://ramymaraei.github.io/banner-checker/" target="_blank" rel="noopener" class="btn btn-qa" title="Banner Checker">Banner Checker</a>
-  <a href="https://ramymaraei.github.io/thumbnail-checker/" target="_blank" rel="noopener" class="btn btn-qa" title="Thumbnail Checker">Thumbnail Checker</a>
-  <a href="https://ramymaraei.github.io/banner-checker/QRCodeReader.html" target="_blank" rel="noopener" class="btn btn-qa" title="QR Code Scanner">QR Code Scanner</a>
-
-  <span class="qa-break"></span> <!-- كسر سطر بعد الزر الثالث -->
-
   <a href="https://www.notion.so/alfan/9f15c45fc4054678916c26d0ace70e5a?v=977fb0265c2f43ba944a43ee498c45d7&source=copy_link" target="_blank" rel="noopener" class="btn btn-qa" title="Designs Requests on Notion">Designs Requests</a>
   <a href="https://www.notion.so/alfan/DESIGN-BOARD-f24d153cee3c4a529e02d597e59f8c77?source=copy_link#c61ac4473d9a40ed9aee7e2876717ba8" target="_blank" rel="noopener" class="btn btn-qa" title="Syndication Requests on Notion">Syndication Requests</a>
   <a href="https://www.notion.so/alfan/aaf31625534d4f09b70f2d9bb2de402f?v=72d064c500704538a29a04c9cda30c4b&source=copy_link" target="_blank" rel="noopener" class="btn btn-qa" title="Design Form Responses">Design Form Responses</a>
