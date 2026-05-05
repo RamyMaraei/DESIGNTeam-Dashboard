@@ -132,6 +132,54 @@
 .designer-total{
   margin:0;
 }
+.designer-photo-wrap{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.designer-profile-tooltip{
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 12px);
+  transform:translateX(-50%);
+  min-width:230px;
+  background:var(--text);
+  color:#fff;
+  border-radius:14px;
+  padding:.75rem;
+  box-shadow:0 12px 30px rgba(33,0,14,.22);
+  text-align:left;
+  font-size:.78rem;
+  line-height:1.7;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  z-index:20;
+  transition:opacity .15s ease, visibility .15s ease, transform .15s ease;
+}
+.designer-profile-tooltip::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:100%;
+  transform:translateX(-50%);
+  border:7px solid transparent;
+  border-top-color:var(--text);
+}
+.designer-photo-wrap:hover .designer-profile-tooltip{
+  opacity:1;
+  visibility:visible;
+  transform:translateX(-50%) translateY(-2px);
+}
+.designer-profile-name{
+  color:#fff;
+  font-weight:800;
+  margin-bottom:.2rem;
+}
+.designer-profile-line strong{
+  color:#fff;
+}
 
 
 
@@ -316,13 +364,16 @@
 
   const DESIGNER_PROFILES = {
     'Ramy': {
-      image: 'https://ca.slack-edge.com/T1P1M29BQ-U03BKKN4C81-1a977d20f256-512'
+      image: 'https://ca.slack-edge.com/T1P1M29BQ-U03BKKN4C81-1a977d20f256-512',
+      hireDate: '2012-05-31'
     },
     'Mohanad': {
-      image: 'https://ca.slack-edge.com/T1P1M29BQ-U03B34QH87P-935894f659b2-512'
+      image: 'https://ca.slack-edge.com/T1P1M29BQ-U03B34QH87P-935894f659b2-512',
+      hireDate: '2020-09-20'
     },
     'Osama': {
-      image: 'https://ca.slack-edge.com/T1P1M29BQ-U04C5PNNKA6-7bab37707e04-512'
+      image: 'https://ca.slack-edge.com/T1P1M29BQ-U04C5PNNKA6-7bab37707e04-512',
+      hireDate: '2022-10-17'
     }
   };
 
@@ -333,17 +384,65 @@
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
+  function formatHireDate(isoDate){
+    if (!isoDate) return 'Not set';
+    const parts = String(isoDate).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return 'Not set';
+    return `${String(parts[2]).padStart(2,'0')}/${String(parts[1]).padStart(2,'0')}/${parts[0]}`;
+  }
+
+  function calculateTenure(isoDate){
+    if (!isoDate) return 'Not set';
+    const parts = String(isoDate).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return 'Not set';
+
+    const start = new Date(parts[0], parts[1] - 1, parts[2]);
+    const today = new Date();
+    if (isNaN(start.getTime()) || start > today) return 'Not set';
+
+    let years = today.getFullYear() - start.getFullYear();
+    let months = today.getMonth() - start.getMonth();
+    let days = today.getDate() - start.getDate();
+
+    if (days < 0) {
+      months--;
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    const partsText = [];
+    if (years > 0) partsText.push(years + (years === 1 ? ' year' : ' years'));
+    if (months > 0) partsText.push(months + (months === 1 ? ' month' : ' months'));
+    if (!partsText.length) partsText.push('Less than 1 month');
+    return partsText.join(', ');
+  }
+
+  function designerProfileTooltipHTML(name, profile){
+    const safeName = escHTML(name);
+    const hireDate = escHTML(formatHireDate(profile.hireDate));
+    const tenure = escHTML(calculateTenure(profile.hireDate));
+    return `<div class="designer-profile-tooltip">
+      <div class="designer-profile-name">${safeName}</div>
+      <div class="designer-profile-line"><strong>Hire Date:</strong> ${hireDate}</div>
+      <div class="designer-profile-line"><strong>Tenure:</strong> ${tenure}</div>
+    </div>`;
+  }
+
   function designerAvatarHTML(name){
     const profile = DESIGNER_PROFILES[name] || {};
     const initials = escHTML(getDesignerInitials(name));
     const safeName = escHTML(name);
+    const tooltip = designerProfileTooltipHTML(name, profile);
     if (profile.image) {
-      return `<div>
+      return `<div class="designer-photo-wrap">
         <img src="${profile.image}" alt="${safeName}" class="designer-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
         <span class="designer-avatar-fallback" style="display:none;">${initials}</span>
+        ${tooltip}
       </div>`;
     }
-    return `<span class="designer-avatar-fallback">${initials}</span>`;
+    return `<div class="designer-photo-wrap"><span class="designer-avatar-fallback">${initials}</span>${tooltip}</div>`;
   }
 
   let RAW = [];
