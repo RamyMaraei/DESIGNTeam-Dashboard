@@ -226,9 +226,9 @@
       <div id="clientDesigners"></div>
     </div>
 
-    <footer>
-      شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Dashboard - Ramy Maraei © 2025
-    </footer>
+  <footer>
+  شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Dashboard - Ramy Maraei © <span class="yearNow"></span>
+</footer>
   </div>
 
   <script>
@@ -698,6 +698,10 @@ function drawTypeBar(data){
 
     applyFilters();
   }
+
+  document.querySelectorAll('.yearNow').forEach(el => {
+    el.textContent = new Date().getFullYear();
+  });
 
   init();
   </script>
