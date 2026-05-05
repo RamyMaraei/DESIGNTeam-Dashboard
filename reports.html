@@ -70,6 +70,22 @@
     .positive{ color:#0f7a37; font-weight:700; }
     .negative{ color:#b00020; font-weight:700; }
     .neutral{ color:#6b7280; font-weight:700; }
+
+    .capacity-status{
+      border-radius: 18px;
+      padding: 1rem;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+    .capacity-status h2{
+      margin:0;
+      font-size:1.35rem;
+      font-weight:800;
+    }
+    .status-normal h2{ color:#0f7a37; }
+    .status-high h2{ color:#b7791f; }
+    .status-critical h2{ color:#b00020; }
+    .status-over h2{ color:#ff002b; }
   </style>
 </head>
 <body>
@@ -109,6 +125,7 @@
             <option value="designer">Designer Performance Report</option>
             <option value="monthly">Monthly Comparison Report</option>
             <option value="forecast">Year Forecast Report</option>
+            <option value="capacity">Capacity & Workload Calculator</option>
           </select>
         </div>
         <div class="col-md-3 d-flex gap-2">
@@ -119,7 +136,30 @@
       <div class="muted mt-2" id="rangeNote"></div>
     </div>
 
+    <div class="card p-3 mb-3" id="capacityInputsCard" style="display:none;">
+      <h6 class="report-title">New Project Calculator</h6>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Total Required Designs</label>
+          <input id="capacityTotalDesigns" type="number" min="0" class="form-control" value="135" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Number of Days</label>
+          <input id="capacityDays" type="number" min="1" class="form-control" value="3" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Number of Designers</label>
+          <input id="capacityDesigners" type="number" min="1" class="form-control" value="3" />
+        </div>
+      </div>
+      <div class="muted mt-2">The calculator compares the required output per designer/day with historical design team capacity.</div>
+    </div>
+
     <div class="row g-3 kpi mb-3" id="summaryCards"></div>
+
+    <div class="card p-3 mb-3" id="capacityStatusCard" style="display:none;">
+      <div id="capacityStatus"></div>
+    </div>
 
     <div class="card p-3 mb-3">
       <h6 class="report-title" id="mainChartTitle">Report Chart</h6>
@@ -306,6 +346,7 @@
     if(secondChart){ secondChart.destroy(); secondChart = null; }
     document.getElementById('secondChartCard').style.display = 'none';
     document.getElementById('secondTableCard').style.display = 'none';
+    document.getElementById('capacityStatusCard').style.display = 'none';
   }
 
   function renderSummaryCards(cards){
@@ -334,8 +375,96 @@
     return 'neutral';
   }
 
+  function percentile(values, p){
+    if (!values.length) return 0;
+    const sorted = values.slice().sort((a,b)=>a-b);
+    const index = Math.ceil((p / 100) * sorted.length) - 1;
+    return sorted[Math.max(0, Math.min(sorted.length - 1, index))];
+  }
+
+  function average(values){
+    if (!values.length) return 0;
+    return values.reduce((a,b)=>a+b,0) / values.length;
+  }
+
+  function weekKeyUTC(d){
+    const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const day = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return date.getUTCFullYear() + '-W' + String(weekNo).padStart(2,'0');
+  }
+
+  function buildCapacityStats(allRows, selectedRows){
+    const dailyMap = new Map();
+    const weeklyMap = new Map();
+    const selectedDailyMap = new Map();
+
+    allRows.forEach(r => {
+      if (!r.designer) return;
+      const dayKey = r.designer + '|' + fmtDDMMYYYY_UTC(r.date);
+      const weekKey = r.designer + '|' + weekKeyUTC(r.date);
+      dailyMap.set(dayKey, (dailyMap.get(dayKey) || 0) + normalizeQty(r.qty));
+      weeklyMap.set(weekKey, (weeklyMap.get(weekKey) || 0) + normalizeQty(r.qty));
+    });
+
+    selectedRows.forEach(r => {
+      if (!r.designer) return;
+      const dayKey = r.designer + '|' + fmtDDMMYYYY_UTC(r.date);
+      selectedDailyMap.set(dayKey, (selectedDailyMap.get(dayKey) || 0) + normalizeQty(r.qty));
+    });
+
+    const dailyValues = Array.from(dailyMap.values()).filter(v => v > 0);
+    const weeklyValues = Array.from(weeklyMap.values()).filter(v => v > 0);
+    const selectedDailyValues = Array.from(selectedDailyMap.values()).filter(v => v > 0);
+
+    return {
+      currentDailyAverage: average(selectedDailyValues),
+      averageDaily: average(dailyValues),
+      safeDaily: percentile(dailyValues, 90),
+      maxDaily: dailyValues.length ? Math.max(...dailyValues) : 0,
+      averageWeekly: average(weeklyValues),
+      safeWeekly: percentile(weeklyValues, 90),
+      maxWeekly: weeklyValues.length ? Math.max(...weeklyValues) : 0,
+      dailySamples: dailyValues.length,
+      weeklySamples: weeklyValues.length
+    };
+  }
+
+  function getCapacityStatus(requiredPerDesignerDay, stats){
+    if (requiredPerDesignerDay <= stats.averageDaily) {
+      return {
+        status:'Normal',
+        className:'status-normal',
+        message:'Required output is within the historical average daily output.'
+      };
+    }
+    if (requiredPerDesignerDay <= stats.safeDaily) {
+      return {
+        status:'High Load',
+        className:'status-high',
+        message:'Required output is above average but still within the safe historical capacity.'
+      };
+    }
+    if (requiredPerDesignerDay <= stats.maxDaily) {
+      return {
+        status:'Critical',
+        className:'status-critical',
+        message:'Required output is above safe capacity and close to the historical maximum.'
+      };
+    }
+    return {
+      status:'Over Capacity',
+      className:'status-over',
+      message:'Required output exceeds the highest historical daily output per designer.'
+    };
+  }
+
   function renderDesignerReport(rows, prevRows, range){
     destroyCharts();
+    document.getElementById('capacityInputsCard').style.display = 'none';
+
     const designers = [...new Set(rows.map(r=>r.designer).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     const prevByDesigner = {};
     prevRows.forEach(r => {
@@ -391,6 +520,8 @@
 
   function renderMonthlyReport(rows, prevRows, range){
     destroyCharts();
+    document.getElementById('capacityInputsCard').style.display = 'none';
+
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const currentMonthly = new Array(12).fill(0);
     const previousMonthly = new Array(12).fill(0);
@@ -436,6 +567,8 @@
 
   function renderForecastReport(rows, range){
     destroyCharts();
+    document.getElementById('capacityInputsCard').style.display = 'none';
+
     const today = new Date();
     const todayUTC = toUTCDateOnly(today.getFullYear(), today.getMonth()+1, today.getDate());
     const year = range.mode === 'year' ? range.selectedYear : todayUTC.getUTCFullYear();
@@ -501,6 +634,86 @@
     ]);
   }
 
+  function renderCapacityReport(rows, range){
+    destroyCharts();
+    document.getElementById('capacityInputsCard').style.display = 'block';
+
+    const stats = buildCapacityStats(RAW, rows);
+
+    const totalRequired = Math.max(0, Number(document.getElementById('capacityTotalDesigns').value || 0));
+    const days = Math.max(1, Number(document.getElementById('capacityDays').value || 1));
+    const designers = Math.max(1, Number(document.getElementById('capacityDesigners').value || 1));
+
+    const teamRequiredPerDay = totalRequired / days;
+    const requiredPerDesignerDay = teamRequiredPerDay / designers;
+    const requiredPerDesignerWeek = requiredPerDesignerDay * 7;
+
+    const status = getCapacityStatus(requiredPerDesignerDay, stats);
+
+    document.getElementById('capacityStatusCard').style.display = 'block';
+    document.getElementById('capacityStatus').innerHTML = `
+      <div class="capacity-status ${status.className}">
+        <h2>${status.status}</h2>
+        <div class="mt-2">${status.message}</div>
+        <div class="muted mt-2">Required per designer/day: ${requiredPerDesignerDay.toFixed(2)} | Max historical daily output: ${stats.maxDaily.toFixed(2)}</div>
+      </div>
+    `;
+
+    renderSummaryCards([
+      { label:'Current Daily Avg / Designer', value:stats.currentDailyAverage.toFixed(2), note:'Selected period' },
+      { label:'Safe Daily Capacity', value:stats.safeDaily.toFixed(2), note:'90th percentile historical output' },
+      { label:'Max Daily Capacity', value:stats.maxDaily.toFixed(2), note:'Highest historical designer/day' },
+      { label:'Required / Designer / Day', value:requiredPerDesignerDay.toFixed(2), note:'Project requirement' }
+    ]);
+
+    document.getElementById('mainChartTitle').textContent = 'Daily Capacity Benchmark';
+    mainChart = new ApexCharts(document.querySelector('#mainChart'), {
+      chart:{ type:'bar', height:360, foreColor: CHART_BASE, toolbar:{show:false} },
+      colors:[HEAD_RED],
+      series:[{
+        name:'Designs / Designer / Day',
+        data:[
+          Number(stats.averageDaily.toFixed(2)),
+          Number(stats.safeDaily.toFixed(2)),
+          Number(stats.maxDaily.toFixed(2)),
+          Number(requiredPerDesignerDay.toFixed(2))
+        ]
+      }],
+      xaxis:{ categories:['Average Daily','Safe Daily','Max Historical Daily','Required Daily'] },
+      dataLabels:{ enabled:true }
+    });
+    mainChart.render();
+
+    document.getElementById('mainTableTitle').textContent = 'Capacity Calculator Summary';
+    renderTable('mainTable', ['Metric','Value'], [
+      ['Total Required Designs', fmtNumber(totalRequired)],
+      ['Number of Days', fmtNumber(days)],
+      ['Number of Designers', fmtNumber(designers)],
+      ['Team Required Per Day', teamRequiredPerDay.toFixed(2)],
+      ['Required Per Designer Per Day', requiredPerDesignerDay.toFixed(2)],
+      ['Required Per Designer Per Week', requiredPerDesignerWeek.toFixed(2)],
+      ['Current Daily Avg / Designer', stats.currentDailyAverage.toFixed(2)],
+      ['Historical Average Daily Output', stats.averageDaily.toFixed(2)],
+      ['Safe Daily Capacity', stats.safeDaily.toFixed(2)],
+      ['Max Historical Daily Output', stats.maxDaily.toFixed(2)],
+      ['Historical Average Weekly Output', stats.averageWeekly.toFixed(2)],
+      ['Safe Weekly Capacity', stats.safeWeekly.toFixed(2)],
+      ['Max Historical Weekly Output', stats.maxWeekly.toFixed(2)],
+      ['Daily Samples Used', fmtNumber(stats.dailySamples)],
+      ['Weekly Samples Used', fmtNumber(stats.weeklySamples)],
+      ['Decision Status', status.status]
+    ]);
+
+    document.getElementById('secondTableCard').style.display = 'block';
+    document.getElementById('secondTableTitle').textContent = 'Decision Levels';
+    renderTable('secondTable', ['Level','Condition','Meaning'], [
+      ['Normal', 'Required <= Average Daily Output', 'Within normal historical performance'],
+      ['High Load', 'Required > Average and <= Safe Daily Capacity', 'Possible but needs attention'],
+      ['Critical', 'Required > Safe and <= Max Historical Daily Output', 'High risk and close to extreme historical output'],
+      ['Over Capacity', 'Required > Max Historical Daily Output', 'Exceeds what any designer achieved historically in one day']
+    ]);
+  }
+
   function applyReport(){
     const range = getSelectedRange();
     const previousRange = getPreviousRange(range);
@@ -508,11 +721,16 @@
     const prevRows = getPreviousRows(previousRange);
     const reportType = document.getElementById('reportType').value;
 
-    document.getElementById('rangeNote').textContent = 'Showing: ' + fmtDDMMYYYY_UTC(range.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(range.toUTC) + ' | Comparing with same period last year: ' + fmtDDMMYYYY_UTC(previousRange.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(previousRange.toUTC);
+    if (reportType === 'capacity') {
+      document.getElementById('rangeNote').textContent = 'Capacity benchmark uses all historical data. Current average uses selected period: ' + fmtDDMMYYYY_UTC(range.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(range.toUTC);
+    } else {
+      document.getElementById('rangeNote').textContent = 'Showing: ' + fmtDDMMYYYY_UTC(range.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(range.toUTC) + ' | Comparing with same period last year: ' + fmtDDMMYYYY_UTC(previousRange.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(previousRange.toUTC);
+    }
 
     if (reportType === 'designer') renderDesignerReport(rows, prevRows, range);
     if (reportType === 'monthly') renderMonthlyReport(rows, prevRows, range);
     if (reportType === 'forecast') renderForecastReport(rows, range);
+    if (reportType === 'capacity') renderCapacityReport(rows, range);
   }
 
   async function init(){
@@ -532,12 +750,18 @@
       document.getElementById('fromDate').value = '';
       document.getElementById('toDate').value = '';
       document.getElementById('reportType').value = 'designer';
+      document.getElementById('capacityTotalDesigns').value = '135';
+      document.getElementById('capacityDays').value = '3';
+      document.getElementById('capacityDesigners').value = '3';
       const currentYear = new Date().getFullYear();
       if (years.includes(currentYear)) yearSelect.value = String(currentYear);
       applyReport();
     });
     document.getElementById('reportType').addEventListener('change', applyReport);
     document.getElementById('yearSelect').addEventListener('change', applyReport);
+    document.getElementById('capacityTotalDesigns').addEventListener('input', applyReport);
+    document.getElementById('capacityDays').addEventListener('input', applyReport);
+    document.getElementById('capacityDesigners').addEventListener('input', applyReport);
 
     applyReport();
   }
