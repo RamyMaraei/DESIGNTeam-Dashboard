@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DESIGN TEAM REPORTS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{ --bg: #f4f0ed; --text: #21000e; --box: #ffffff; --border: #21000e22; --control: #ffffff; --control-border:#21000e55; --red: #ff002b; --chart-base: #21000E; --link: #ff002b; }
+    body { background: var(--bg); color: var(--text); font-family: 'Alexandria', sans-serif; }
+    .card { background: var(--box); border: 1px solid var(--border); }
+    .form-select, .form-control { background: var(--control); color: var(--text); border-color: var(--control-border); }
+    .btn-primary { background: var(--red) !important; border-color: var(--red) !important; color: #fff !important; }
+    .btn-outline-light { border-color: var(--red) !important; color: var(--red) !important; }
+    h1, .form-label { color: var(--red); }
+    .kpi h2 { font-weight: 800; color: var(--text); }
+    .kpi .small { color: var(--text) !important; }
+    .muted { color: #6b7280; font-size: .8rem; }
+    footer { text-align: center; padding: 1rem; font-size: 0.9rem; color: var(--text); border-top: 1px solid var(--border); margin-top: 1rem; }
+
+    .btn-back{
+      display:inline-flex;
+      align-items:center;
+      gap:.5rem;
+      background: var(--red) !important;
+      color:#fff !important;
+      border: 1px solid var(--red) !important;
+      border-radius: 9999px;
+      padding:.45rem .9rem;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow: 0 4px 14px rgba(255,0,43,.15);
+    }
+    .btn-back:hover{
+      filter: brightness(0.95);
+    }
+
+    .report-title{
+      color: var(--red);
+      font-weight: 800;
+      margin: 0 0 .75rem;
+    }
+    .table-wrap{
+      overflow-x:auto;
+    }
+    .report-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:.86rem;
+      min-width:760px;
+    }
+    .report-table th{
+      background:#fff0f3;
+      color:var(--text);
+      border:1px solid var(--border);
+      padding:.55rem;
+      white-space:nowrap;
+    }
+    .report-table td{
+      border:1px solid var(--border);
+      padding:.55rem;
+      white-space:nowrap;
+    }
+    .report-table tbody tr:nth-child(even){
+      background:rgba(255,255,255,.45);
+    }
+    .positive{ color:#0f7a37; font-weight:700; }
+    .negative{ color:#b00020; font-weight:700; }
+    .neutral{ color:#6b7280; font-weight:700; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+
+    <!-- Logo -->
+    <div class="d-flex align-items-center justify-content-center mb-2">
+      <img src="https://ramymaraei.github.io/banner-checker/ALFAN_LOGO-Small.png" alt="ALFAN Logo" style="max-height:56px;">
+    </div>
+
+    <!-- Title -->
+    <div class="d-flex align-items-center justify-content-center mb-3">
+      <h1 class="fs-4 m-0 text-center">DESIGN TEAM REPORTS</h1>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-center mb-3">
+      <a href="index.html" class="btn-back" title="Back to Dashboard">Back to Dashboard</a>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label">Year</label>
+          <select id="yearSelect" class="form-select"><option value="all">All</option></select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">From</label>
+          <input id="fromDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">To</label>
+          <input id="toDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Report Type</label>
+          <select id="reportType" class="form-select">
+            <option value="designer">Designer Performance Report</option>
+            <option value="monthly">Monthly Comparison Report</option>
+            <option value="forecast">Year Forecast Report</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button id="btnApply" class="btn btn-primary w-100">Apply</button>
+          <button id="btnClear" class="btn btn-outline-light w-100">Clear</button>
+        </div>
+      </div>
+      <div class="muted mt-2" id="rangeNote"></div>
+    </div>
+
+    <div class="row g-3 kpi mb-3" id="summaryCards"></div>
+
+    <div class="card p-3 mb-3">
+      <h6 class="report-title" id="mainChartTitle">Report Chart</h6>
+      <div id="mainChart"></div>
+    </div>
+
+    <div class="card p-3 mb-3" id="secondChartCard" style="display:none;">
+      <h6 class="report-title" id="secondChartTitle">Monthly Breakdown</h6>
+      <div id="secondChart"></div>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <h6 class="report-title" id="mainTableTitle">Report Table</h6>
+      <div class="table-wrap" id="mainTable"></div>
+    </div>
+
+    <div class="card p-3 mb-3" id="secondTableCard" style="display:none;">
+      <h6 class="report-title" id="secondTableTitle">Details</h6>
+      <div class="table-wrap" id="secondTable"></div>
+    </div>
+
+    <footer>
+      شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Reports - Ramy Maraei © <span id="yearNow"></span>
+    </footer>
+  </div>
+
+  <script>
+  // ===== CONFIG =====
+  const SHEET_API = 'https://script.google.com/macros/s/AKfycbzl7CV83GMqgUMEK7CZlAJ-2s4aruOYeistkcpX_6mozP_e4c3DG4eMIEN7GQZcx4B6/exec';
+  const CSS = getComputedStyle(document.documentElement);
+  const CHART_BASE = CSS.getPropertyValue('--chart-base').trim() || '#21000E';
+  const HEAD_RED = CSS.getPropertyValue('--red').trim() || '#ff002b';
+
+  const TYPE_ORDER = ['Snap Tiles','Snap Theme','Banners','Thumbnails','Covers','Edit Covers','Logos / Typography','Unknown'];
+
+  const TYPE_COLOR_MAP = {
+    'Snap Tiles': '#fbbc04',
+    'Snap Theme': '#ffd966',
+    'Banners': '#990000',
+    'Thumbnails': '#3c78d8',
+    'Covers': '#351c75',
+    'Edit Covers': '#674ea7',
+    'Logos / Typography': '#c27ba0',
+    'Unknown': '#9ca3af'
+  };
+
+  let RAW = [];
+  let mainChart = null;
+  let secondChart = null;
+
+  function canonicalType(raw){
+    if(!raw) return 'Unknown';
+    const s = String(raw).trim().toLowerCase();
+
+    if (['snap tiles','snap tile','snapchat tile','snapchat tiles','snap-tiles'].includes(s)) return 'Snap Tiles';
+    if (['snap theme','snapchat theme'].includes(s)) return 'Snap Theme';
+    if (['banners','banner','youtube banner','yt banner','youtube banners'].includes(s)) return 'Banners';
+    if (['thumbnails','thumbnail','youtube thumbnail','yt thumbnail'].includes(s)) return 'Thumbnails';
+    if (['covers','cover'].includes(s)) return 'Covers';
+    if (['edit covers','cover edit','edit cover'].includes(s)) return 'Edit Covers';
+    if ([
+      'logos / typography','logo / typography','logos & typography','logo&typography',
+      'logos','logo','typography'
+    ].includes(s)) return 'Logos / Typography';
+
+    return String(raw).trim();
+  }
+
+  function normalizeQty(v){
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number' && isFinite(v)) return v;
+    let s = String(v).trim();
+    const ar = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+    s = s.replace(/[٠-٩]/g, d => ar[d]);
+    s = s.replace(/[\u066C,]/g, '');
+    s = s.replace(/\u066B/g, '.');
+    if (/^[\d.\-+\s]+$/.test(s) && s.includes('+')) {
+      return s.split('+').reduce((a,p)=> a+(parseFloat(p)||0), 0);
+    }
+    const n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function toUTCDateOnly(y,m,d){ return new Date(Date.UTC(y,m-1,d)); }
+
+  function parseDateOnly(input){
+    if (input instanceof Date) {
+      return toUTCDateOnly(input.getFullYear(), input.getMonth()+1, input.getDate());
+    }
+    const s = String(input).trim();
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return toUTCDateOnly(+m[1], +m[2], +m[3]);
+    const dtTry = new Date(s);
+    if (!isNaN(dtTry)) {
+      return toUTCDateOnly(dtTry.getFullYear(), dtTry.getMonth()+1, dtTry.getDate());
+    }
+    const parts = s.split(/[^0-9]/).filter(Boolean).map(Number);
+    if (parts.length >= 3){
+      let a=parts[0], b=parts[1], c=parts[2];
+      if (a>31 && b<=12) return toUTCDateOnly(a,b,c);
+      if (a>12) return toUTCDateOnly(c,b,a);
+      if (b>12) return toUTCDateOnly(c,a,b);
+      return toUTCDateOnly(c,b,a);
+    }
+    const now = new Date();
+    return toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
+  }
+
+  function fromISODateOnly(iso){ const [Y,M,D] = iso.split('-').map(Number); return toUTCDateOnly(Y,M,D); }
+  function fmtDDMMYYYY_UTC(d){ return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`; }
+  function fmtNumber(n){ return Number(n || 0).toLocaleString('en-US'); }
+  function sumQty(rows){ let t=0; for (const r of rows) t += normalizeQty(r.qty); return t; }
+
+  async function loadData(){
+    try{
+      const res = await fetch(SHEET_API, { cache: 'no-store' });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const json = await res.json();
+      return (Array.isArray(json)?json:[]).map(r=>{
+        const dateOnly = parseDateOnly(r.Date);
+        return {
+          date: dateOnly,
+          qty: normalizeQty(r.Quantity),
+          type: canonicalType((r.Type||'').trim()),
+          designer: (r.Designer||'').trim(),
+          client: (r.Client||'').trim(),
+          channel: String(r['Channel ID'] ?? '').trim()
+        };
+      }).filter(r=> r.date instanceof Date && !isNaN(r.date.getTime()));
+    }catch(e){ console.error(e); return []; }
+  }
+
+  function getSelectedRange(){
+    const yearVal = document.getElementById('yearSelect').value;
+    const fromVal = document.getElementById('fromDate').value;
+    const toVal = document.getElementById('toDate').value;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    let fromUTC = fromVal ? fromISODateOnly(fromVal) : null;
+    let toUTC = toVal ? fromISODateOnly(toVal) : null;
+    let mode = 'year';
+    let selectedYear = yearVal !== 'all' ? Number(yearVal) : currentYear;
+
+    if (fromUTC || toUTC) {
+      mode = 'range';
+      if (!fromUTC) fromUTC = toUTC;
+      if (!toUTC) toUTC = fromUTC;
+    } else {
+      fromUTC = toUTCDateOnly(selectedYear, 1, 1);
+      toUTC = toUTCDateOnly(selectedYear, 12, 31);
+    }
+
+    return { mode, selectedYear, fromUTC, toUTC };
+  }
+
+  function getFilteredRows(range){
+    return RAW.filter(r => r.date >= range.fromUTC && r.date <= range.toUTC);
+  }
+
+  function getPreviousRows(range){
+    if (range.mode === 'year') {
+      const prevYear = range.selectedYear - 1;
+      const fromPrev = toUTCDateOnly(prevYear, 1, 1);
+      const toPrev = toUTCDateOnly(prevYear, 12, 31);
+      return RAW.filter(r => r.date >= fromPrev && r.date <= toPrev);
+    }
+    const days = Math.round((range.toUTC.getTime() - range.fromUTC.getTime()) / 86400000) + 1;
+    const prevTo = new Date(range.fromUTC.getTime() - 86400000);
+    const prevFrom = new Date(prevTo.getTime() - ((days - 1) * 86400000));
+    return RAW.filter(r => r.date >= prevFrom && r.date <= prevTo);
+  }
+
+  function destroyCharts(){
+    if(mainChart){ mainChart.destroy(); mainChart = null; }
+    if(secondChart){ secondChart.destroy(); secondChart = null; }
+    document.getElementById('secondChartCard').style.display = 'none';
+    document.getElementById('secondTableCard').style.display = 'none';
+  }
+
+  function renderSummaryCards(cards){
+    const el = document.getElementById('summaryCards');
+    el.innerHTML = cards.map(card => `
+      <div class="col-md-3">
+        <div class="card p-3 h-100">
+          <span class="small">${card.label}</span>
+          <h2>${card.value}</h2>
+          <div class="muted">${card.note || ''}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderTable(targetId, headers, rows){
+    const el = document.getElementById(targetId);
+    const thead = headers.map(h => `<th>${h}</th>`).join('');
+    const tbody = rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+    el.innerHTML = `<table class="report-table"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
+  }
+
+  function changeClass(n){
+    if (n > 0) return 'positive';
+    if (n < 0) return 'negative';
+    return 'neutral';
+  }
+
+  function renderDesignerReport(rows, prevRows, range){
+    destroyCharts();
+    const designers = [...new Set(rows.map(r=>r.designer).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const prevByDesigner = {};
+    prevRows.forEach(r => {
+      if (!r.designer) return;
+      prevByDesigner[r.designer] = (prevByDesigner[r.designer] || 0) + normalizeQty(r.qty);
+    });
+
+    const tableRows = designers.map(designer => {
+      const dRows = rows.filter(r => r.designer === designer);
+      const total = sumQty(dRows);
+      const prev = prevByDesigner[designer] || 0;
+      const diff = total - prev;
+      const change = prev ? ((diff / prev) * 100).toFixed(1) + '%' : '—';
+      const typeTotals = TYPE_ORDER.map(type => sumQty(dRows.filter(r => r.type === type)));
+      return [designer, fmtNumber(total), fmtNumber(prev), `<span class="${changeClass(diff)}">${fmtNumber(diff)}</span>`, change].concat(typeTotals.map(fmtNumber));
+    }).sort((a,b)=> normalizeQty(b[1]) - normalizeQty(a[1]));
+
+    const total = sumQty(rows);
+    const prevTotal = sumQty(prevRows);
+    const diffTotal = total - prevTotal;
+
+    renderSummaryCards([
+      { label:'Total Designs', value:fmtNumber(total), note:'Selected period' },
+      { label:'Previous Comparison', value:fmtNumber(prevTotal), note:range.mode === 'year' ? 'Previous year' : 'Previous same period length' },
+      { label:'Difference', value:fmtNumber(diffTotal), note:diffTotal >= 0 ? 'Increase or equal' : 'Decrease' },
+      { label:'Designers', value:fmtNumber(designers.length), note:'Active in selected period' }
+    ]);
+
+    document.getElementById('mainChartTitle').textContent = 'Designer Performance';
+    mainChart = new ApexCharts(document.querySelector('#mainChart'), {
+      chart:{ type:'bar', height:360, foreColor: CHART_BASE, toolbar:{show:false} },
+      colors:[HEAD_RED],
+      series:[{ name:'Designs', data: tableRows.map(r => normalizeQty(r[1])) }],
+      xaxis:{ categories: tableRows.map(r => r[0]) },
+      dataLabels:{ enabled:false }
+    });
+    mainChart.render();
+
+    document.getElementById('mainTableTitle').textContent = 'Designer Performance Table';
+    renderTable('mainTable', ['Designer','Total','Previous','Difference','Change %'].concat(TYPE_ORDER), tableRows);
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthlyRows = designers.map(designer => {
+      const dRows = rows.filter(r => r.designer === designer);
+      const monthTotals = months.map((m, index) => sumQty(dRows.filter(r => r.date.getUTCMonth() === index)));
+      return [designer].concat(monthTotals.map(fmtNumber)).concat([fmtNumber(sumQty(dRows))]);
+    });
+
+    document.getElementById('secondTableCard').style.display = 'block';
+    document.getElementById('secondTableTitle').textContent = 'Monthly Breakdown by Designer';
+    renderTable('secondTable', ['Designer'].concat(months).concat(['Total']), monthlyRows);
+  }
+
+  function renderMonthlyReport(rows, prevRows, range){
+    destroyCharts();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const currentMonthly = new Array(12).fill(0);
+    const previousMonthly = new Array(12).fill(0);
+
+    rows.forEach(r => currentMonthly[r.date.getUTCMonth()] += normalizeQty(r.qty));
+    prevRows.forEach(r => previousMonthly[r.date.getUTCMonth()] += normalizeQty(r.qty));
+
+    const tableRows = months.map((month, i) => {
+      const current = currentMonthly[i];
+      const previous = previousMonthly[i];
+      const diff = current - previous;
+      const change = previous ? ((diff / previous) * 100).toFixed(1) + '%' : '—';
+      return [month, fmtNumber(current), fmtNumber(previous), `<span class="${changeClass(diff)}">${fmtNumber(diff)}</span>`, change];
+    });
+
+    const total = currentMonthly.reduce((a,b)=>a+b,0);
+    const prevTotal = previousMonthly.reduce((a,b)=>a+b,0);
+    const diffTotal = total - prevTotal;
+
+    renderSummaryCards([
+      { label:'Current Total', value:fmtNumber(total), note:range.mode === 'year' ? String(range.selectedYear) : 'Selected period' },
+      { label:'Previous Total', value:fmtNumber(prevTotal), note:range.mode === 'year' ? String(range.selectedYear - 1) : 'Previous same period length' },
+      { label:'Difference', value:fmtNumber(diffTotal), note:diffTotal >= 0 ? 'Increase or equal' : 'Decrease' },
+      { label:'Best Month', value:months[currentMonthly.indexOf(Math.max(...currentMonthly))], note:fmtNumber(Math.max(...currentMonthly)) + ' designs' }
+    ]);
+
+    document.getElementById('mainChartTitle').textContent = 'Monthly Comparison';
+    mainChart = new ApexCharts(document.querySelector('#mainChart'), {
+      chart:{ type:'bar', height:360, foreColor: CHART_BASE, toolbar:{show:false} },
+      colors:[HEAD_RED, CHART_BASE],
+      series:[
+        { name:'Current', data: currentMonthly },
+        { name:'Previous', data: previousMonthly }
+      ],
+      xaxis:{ categories: months },
+      dataLabels:{ enabled:false }
+    });
+    mainChart.render();
+
+    document.getElementById('mainTableTitle').textContent = 'Monthly Comparison Table';
+    renderTable('mainTable', ['Month','Current','Previous','Difference','Change %'], tableRows);
+  }
+
+  function renderForecastReport(rows, range){
+    destroyCharts();
+    const today = new Date();
+    const todayUTC = toUTCDateOnly(today.getFullYear(), today.getMonth()+1, today.getDate());
+    const year = range.mode === 'year' ? range.selectedYear : todayUTC.getUTCFullYear();
+    const yearStart = toUTCDateOnly(year, 1, 1);
+    const yearEnd = toUTCDateOnly(year, 12, 31);
+    const untilDate = todayUTC < yearEnd ? todayUTC : yearEnd;
+    const yearRowsUntilToday = RAW.filter(r => r.date >= yearStart && r.date <= untilDate);
+
+    const currentTotal = sumQty(yearRowsUntilToday);
+    const daysPassed = Math.max(1, Math.round((untilDate.getTime() - yearStart.getTime()) / 86400000) + 1);
+    const daysInYear = Math.round((yearEnd.getTime() - yearStart.getTime()) / 86400000) + 1;
+    const dailyAverage = currentTotal / daysPassed;
+    const monthlyAverage = currentTotal / Math.max(1, (untilDate.getUTCMonth() + 1));
+    const expectedEndTotal = Math.round(dailyAverage * daysInYear);
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const actualMonthly = new Array(12).fill(0);
+    yearRowsUntilToday.forEach(r => actualMonthly[r.date.getUTCMonth()] += normalizeQty(r.qty));
+
+    const forecastMonthly = months.map((m, i) => {
+      if (i <= untilDate.getUTCMonth()) return actualMonthly[i];
+      const monthStart = toUTCDateOnly(year, i + 1, 1);
+      const monthEnd = i === 11 ? yearEnd : toUTCDateOnly(year, i + 2, 0);
+      const monthDays = Math.round((monthEnd.getTime() - monthStart.getTime()) / 86400000) + 1;
+      return Math.round(dailyAverage * monthDays);
+    });
+
+    const remainingRows = months.map((month, i) => {
+      const status = i <= untilDate.getUTCMonth() ? 'Actual' : 'Expected';
+      return [month, status, fmtNumber(forecastMonthly[i])];
+    });
+
+    renderSummaryCards([
+      { label:'Current Total', value:fmtNumber(currentTotal), note:'From Jan 1 to today' },
+      { label:'Daily Average', value:dailyAverage.toFixed(2), note:fmtNumber(daysPassed) + ' days passed' },
+      { label:'Monthly Average', value:monthlyAverage.toFixed(2), note:'Based on current performance' },
+      { label:'Expected End of Year', value:fmtNumber(expectedEndTotal), note:String(year) }
+    ]);
+
+    document.getElementById('mainChartTitle').textContent = 'Year Forecast';
+    mainChart = new ApexCharts(document.querySelector('#mainChart'), {
+      chart:{ type:'bar', height:360, foreColor: CHART_BASE, toolbar:{show:false} },
+      colors:[HEAD_RED],
+      series:[{ name:'Actual / Expected', data: forecastMonthly }],
+      xaxis:{ categories: months },
+      dataLabels:{ enabled:false }
+    });
+    mainChart.render();
+
+    document.getElementById('mainTableTitle').textContent = 'Forecast Table';
+    renderTable('mainTable', ['Month','Status','Designs'], remainingRows);
+
+    document.getElementById('secondTableCard').style.display = 'block';
+    document.getElementById('secondTableTitle').textContent = 'Forecast Calculation Summary';
+    renderTable('secondTable', ['Metric','Value'], [
+      ['Year', year],
+      ['Current Total', fmtNumber(currentTotal)],
+      ['Days Passed', fmtNumber(daysPassed)],
+      ['Days In Year', fmtNumber(daysInYear)],
+      ['Daily Average', dailyAverage.toFixed(2)],
+      ['Monthly Average', monthlyAverage.toFixed(2)],
+      ['Expected End of Year Total', fmtNumber(expectedEndTotal)]
+    ]);
+  }
+
+  function applyReport(){
+    const range = getSelectedRange();
+    const rows = getFilteredRows(range);
+    const prevRows = getPreviousRows(range);
+    const reportType = document.getElementById('reportType').value;
+
+    document.getElementById('rangeNote').textContent = 'Showing: ' + fmtDDMMYYYY_UTC(range.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(range.toUTC);
+
+    if (reportType === 'designer') renderDesignerReport(rows, prevRows, range);
+    if (reportType === 'monthly') renderMonthlyReport(rows, prevRows, range);
+    if (reportType === 'forecast') renderForecastReport(rows, range);
+  }
+
+  async function init(){
+    document.getElementById('yearNow').textContent = new Date().getFullYear();
+    RAW = await loadData();
+    if(!RAW.length){ console.warn('No data'); return; }
+
+    const years = [...new Set(RAW.map(r=>r.date.getUTCFullYear()))].sort((a,b)=>b-a);
+    const yearSelect = document.getElementById('yearSelect');
+    yearSelect.innerHTML = '<option value="all">All</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+
+    const currentYear = new Date().getFullYear();
+    if (years.includes(currentYear)) yearSelect.value = String(currentYear);
+
+    document.getElementById('btnApply').addEventListener('click', applyReport);
+    document.getElementById('btnClear').addEventListener('click', ()=>{
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
+      document.getElementById('reportType').value = 'designer';
+      const currentYear = new Date().getFullYear();
+      if (years.includes(currentYear)) yearSelect.value = String(currentYear);
+      applyReport();
+    });
+    document.getElementById('reportType').addEventListener('change', applyReport);
+    document.getElementById('yearSelect').addEventListener('change', applyReport);
+
+    applyReport();
+  }
+
+  init();
+  </script>
+</body>
+</html>
