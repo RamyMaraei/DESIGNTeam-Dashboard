@@ -124,9 +124,9 @@
     </div>
 
     <!-- فوتر -->
-    <footer class="no-print">
-      شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Dashboard - Ramy Maraei © 2025
-    </footer>
+<footer class="no-print">
+  شركة الفان – تصميم وتنفيذ رامي مرعي | Alfan - DESIGNTeam Dashboard - Ramy Maraei © <span class="yearNow"></span>
+</footer>
   </div>
 
   <script>
@@ -385,7 +385,11 @@
     }
 
     // INIT
-    (async function init(){
+(async function init(){
+      document.querySelectorAll('.yearNow').forEach(el => {
+        el.textContent = new Date().getFullYear();
+      });
+
       RAW = await loadData();
       if (!RAW.length){
         document.getElementById('emptyState').style.display='block';
