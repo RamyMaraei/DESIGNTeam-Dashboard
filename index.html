@@ -96,6 +96,45 @@
 }
 
 
+/* Designer photo cards */
+.designer-card{
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:.45rem;
+}
+.designer-avatar,
+.designer-avatar-fallback{
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 6px 16px rgba(33,0,14,.12);
+  background:#fff0f3;
+}
+.designer-avatar{
+  object-fit:cover;
+  display:block;
+}
+.designer-avatar-fallback{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--red);
+  font-weight:800;
+  font-size:1.3rem;
+}
+.designer-name{
+  font-weight:700;
+}
+.designer-total{
+  margin:0;
+}
+
+
+
   </style>
 </head>
 <body>
@@ -275,6 +314,38 @@
 
   const CALM_FALLBACKS = ['#6b7280','#9ca3af','#94a3b8','#a3b18a','#bdb2ff','#8ecae6','#bde0fe','#a8dadc'];
 
+  const DESIGNER_PROFILES = {
+    'Ramy': {
+      image: 'https://ca.slack-edge.com/T1P1M29BQ-U03BKKN4C81-1a977d20f256-512'
+    },
+    'Mohanad': {
+      image: 'https://ca.slack-edge.com/T1P1M29BQ-U03B34QH87P-935894f659b2-512'
+    },
+    'Osama': {
+      image: 'https://ca.slack-edge.com/T1P1M29BQ-U04C5PNNKA6-7bab37707e04-512'
+    }
+  };
+
+  function getDesignerInitials(name){
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  function designerAvatarHTML(name){
+    const profile = DESIGNER_PROFILES[name] || {};
+    const initials = escHTML(getDesignerInitials(name));
+    const safeName = escHTML(name);
+    if (profile.image) {
+      return `<div>
+        <img src="${profile.image}" alt="${safeName}" class="designer-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <span class="designer-avatar-fallback" style="display:none;">${initials}</span>
+      </div>`;
+    }
+    return `<span class="designer-avatar-fallback">${initials}</span>`;
+  }
+
   let RAW = [];
   let areaChart = null, typeBarChart = null, typePieChart = null, monthsChart = null, yearsChart = null;
   let LAST_FILTERED = [];
@@ -383,7 +454,11 @@
     designers.forEach(d=>{
       const total = sumQty(data.filter(r=>r.designer===d));
       const div = document.createElement('div'); div.className='col-12 col-md-4';
-      div.innerHTML = `<div class="card p-3 h-100"><span class="small">${d}</span><h2>${total}</h2></div>`;
+      div.innerHTML = `<div class="card p-3 h-100 designer-card">
+        ${designerAvatarHTML(d)}
+        <span class="small designer-name">${escHTML(d)}</span>
+        <h2 class="designer-total">${total}</h2>
+      </div>`;
       c.appendChild(div);
     });
   }
@@ -708,7 +783,6 @@ function drawTypeBar(data){
 
 </body>
 </html>
-
 
 
 
