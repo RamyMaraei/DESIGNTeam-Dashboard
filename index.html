@@ -651,9 +651,38 @@ function drawTypeBar(data){
     document.getElementById('monthsHint').textContent = selectedYear && selectedYear!=='all' ? `Year ${selectedYear}` : '';
   }
 
-  function drawYearsBar(currentYearTotal){
-    const labels = ['2020','2021','2022','2023','2024','2025'];
-    const values = [4248, 6961, 12002, 9542, 10810, currentYearTotal];
+function drawYearsBar(){
+    const fixedYearTotals = {
+      2020: 4248,
+      2021: 6961,
+      2022: 12002,
+      2023: 9542,
+      2024: 10810
+    };
+
+    const now = new Date();
+    const todayLocal = toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
+    const currentYear = todayLocal.getUTCFullYear();
+
+    const labels = [];
+    const values = [];
+
+    for (let year = 2020; year <= currentYear; year++) {
+      labels.push(String(year));
+
+      if (fixedYearTotals[year] !== undefined) {
+        values.push(fixedYearTotals[year]);
+      } else {
+        let yearRows = RAW.filter(r => r.date.getUTCFullYear() === year);
+
+        if (year === currentYear) {
+          yearRows = yearRows.filter(r => r.date <= todayLocal);
+        }
+
+        values.push(sumQty(yearRows));
+      }
+    }
+
     const opts = {
       chart:{ type:'bar', height:300, foreColor: CHART_BASE, toolbar:{show:false} },
       colors:[HEAD_RED],
@@ -661,6 +690,7 @@ function drawTypeBar(data){
       xaxis:{ categories: labels },
       dataLabels:{ enabled:false }
     };
+
     if (yearsChart){ yearsChart.destroy(); yearsChart = null; }
     yearsChart = new ApexCharts(document.querySelector('#yearsBar'), opts);
     yearsChart.render();
@@ -799,12 +829,8 @@ function drawTypeBar(data){
     drawTypePie(filtered);
     drawMonthsBar(yearBase, yearVal);
 
-    // إجمالي السنة الحالية حتى اليوم
-    const now = new Date();
-    const todayLocal = toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
-    const currentYear = todayLocal.getUTCFullYear();
-    const currentYearTotal = sumQty(RAW.filter(r => r.date.getUTCFullYear() === currentYear && r.date <= todayLocal));
-    drawYearsBar(currentYearTotal);
+    // Yearly Comparison: auto-update years from 2020 to current year
+    drawYearsBar();
 
     updateClientDetails(LAST_FILTERED);
   }
