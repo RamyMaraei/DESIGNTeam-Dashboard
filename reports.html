@@ -252,12 +252,13 @@
     }catch(e){ console.error(e); return []; }
   }
 
-  function getSelectedRange(){
+function getSelectedRange(){
     const yearVal = document.getElementById('yearSelect').value;
     const fromVal = document.getElementById('fromDate').value;
     const toVal = document.getElementById('toDate').value;
     const now = new Date();
-    const currentYear = now.getFullYear();
+    const todayUTC = toUTCDateOnly(now.getFullYear(), now.getMonth()+1, now.getDate());
+    const currentYear = todayUTC.getUTCFullYear();
 
     let fromUTC = fromVal ? fromISODateOnly(fromVal) : null;
     let toUTC = toVal ? fromISODateOnly(toVal) : null;
@@ -270,7 +271,8 @@
       if (!toUTC) toUTC = fromUTC;
     } else {
       fromUTC = toUTCDateOnly(selectedYear, 1, 1);
-      toUTC = toUTCDateOnly(selectedYear, 12, 31);
+      const selectedYearEnd = toUTCDateOnly(selectedYear, 12, 31);
+      toUTC = selectedYear === currentYear ? todayUTC : selectedYearEnd;
     }
 
     return { mode, selectedYear, fromUTC, toUTC };
@@ -280,17 +282,23 @@
     return RAW.filter(r => r.date >= range.fromUTC && r.date <= range.toUTC);
   }
 
-  function getPreviousRows(range){
-    if (range.mode === 'year') {
-      const prevYear = range.selectedYear - 1;
-      const fromPrev = toUTCDateOnly(prevYear, 1, 1);
-      const toPrev = toUTCDateOnly(prevYear, 12, 31);
-      return RAW.filter(r => r.date >= fromPrev && r.date <= toPrev);
-    }
-    const days = Math.round((range.toUTC.getTime() - range.fromUTC.getTime()) / 86400000) + 1;
-    const prevTo = new Date(range.fromUTC.getTime() - 86400000);
-    const prevFrom = new Date(prevTo.getTime() - ((days - 1) * 86400000));
-    return RAW.filter(r => r.date >= prevFrom && r.date <= prevTo);
+  function sameDatePreviousYear(d){
+    const y = d.getUTCFullYear() - 1;
+    const m = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
+    const lastDayInPreviousYearMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    return toUTCDateOnly(y, m, Math.min(day, lastDayInPreviousYearMonth));
+  }
+
+  function getPreviousRange(range){
+    return {
+      fromUTC: sameDatePreviousYear(range.fromUTC),
+      toUTC: sameDatePreviousYear(range.toUTC)
+    };
+  }
+
+  function getPreviousRows(previousRange){
+    return RAW.filter(r => r.date >= previousRange.fromUTC && r.date <= previousRange.toUTC);
   }
 
   function destroyCharts(){
@@ -493,13 +501,14 @@
     ]);
   }
 
-  function applyReport(){
+function applyReport(){
     const range = getSelectedRange();
+    const previousRange = getPreviousRange(range);
     const rows = getFilteredRows(range);
-    const prevRows = getPreviousRows(range);
+    const prevRows = getPreviousRows(previousRange);
     const reportType = document.getElementById('reportType').value;
 
-    document.getElementById('rangeNote').textContent = 'Showing: ' + fmtDDMMYYYY_UTC(range.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(range.toUTC);
+    document.getElementById('rangeNote').textContent = 'Showing: ' + fmtDDMMYYYY_UTC(range.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(range.toUTC) + ' | Comparing with same period last year: ' + fmtDDMMYYYY_UTC(previousRange.fromUTC) + ' to ' + fmtDDMMYYYY_UTC(previousRange.toUTC);
 
     if (reportType === 'designer') renderDesignerReport(rows, prevRows, range);
     if (reportType === 'monthly') renderMonthlyReport(rows, prevRows, range);
