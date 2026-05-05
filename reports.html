@@ -252,7 +252,7 @@
     }catch(e){ console.error(e); return []; }
   }
 
-function getSelectedRange(){
+  function getSelectedRange(){
     const yearVal = document.getElementById('yearSelect').value;
     const fromVal = document.getElementById('fromDate').value;
     const toVal = document.getElementById('toDate').value;
@@ -359,7 +359,7 @@ function getSelectedRange(){
 
     renderSummaryCards([
       { label:'Total Designs', value:fmtNumber(total), note:'Selected period' },
-      { label:'Previous Comparison', value:fmtNumber(prevTotal), note:range.mode === 'year' ? 'Previous year' : 'Previous same period length' },
+      { label:'Previous Comparison', value:fmtNumber(prevTotal), note:'Same period previous year' },
       { label:'Difference', value:fmtNumber(diffTotal), note:diffTotal >= 0 ? 'Increase or equal' : 'Decrease' },
       { label:'Designers', value:fmtNumber(designers.length), note:'Active in selected period' }
     ]);
@@ -375,7 +375,7 @@ function getSelectedRange(){
     mainChart.render();
 
     document.getElementById('mainTableTitle').textContent = 'Designer Performance Table';
-    renderTable('mainTable', ['Designer','Total','Previous','Difference','Change %'].concat(TYPE_ORDER), tableRows);
+    renderTable('mainTable', ['Designer','Total','Same Period Last Year','Difference','Change %'].concat(TYPE_ORDER), tableRows);
 
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const monthlyRows = designers.map(designer => {
@@ -412,7 +412,7 @@ function getSelectedRange(){
 
     renderSummaryCards([
       { label:'Current Total', value:fmtNumber(total), note:range.mode === 'year' ? String(range.selectedYear) : 'Selected period' },
-      { label:'Previous Total', value:fmtNumber(prevTotal), note:range.mode === 'year' ? String(range.selectedYear - 1) : 'Previous same period length' },
+      { label:'Previous Total', value:fmtNumber(prevTotal), note:'Same period previous year' },
       { label:'Difference', value:fmtNumber(diffTotal), note:diffTotal >= 0 ? 'Increase or equal' : 'Decrease' },
       { label:'Best Month', value:months[currentMonthly.indexOf(Math.max(...currentMonthly))], note:fmtNumber(Math.max(...currentMonthly)) + ' designs' }
     ]);
@@ -423,7 +423,7 @@ function getSelectedRange(){
       colors:[HEAD_RED, CHART_BASE],
       series:[
         { name:'Current', data: currentMonthly },
-        { name:'Previous', data: previousMonthly }
+        { name:'Same Period Last Year', data: previousMonthly }
       ],
       xaxis:{ categories: months },
       dataLabels:{ enabled:false }
@@ -431,7 +431,7 @@ function getSelectedRange(){
     mainChart.render();
 
     document.getElementById('mainTableTitle').textContent = 'Monthly Comparison Table';
-    renderTable('mainTable', ['Month','Current','Previous','Difference','Change %'], tableRows);
+    renderTable('mainTable', ['Month','Current','Same Period Last Year','Difference','Change %'], tableRows);
   }
 
   function renderForecastReport(rows, range){
@@ -501,7 +501,7 @@ function getSelectedRange(){
     ]);
   }
 
-function applyReport(){
+  function applyReport(){
     const range = getSelectedRange();
     const previousRange = getPreviousRange(range);
     const rows = getFilteredRows(range);
