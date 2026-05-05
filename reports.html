@@ -396,7 +396,7 @@
     return date.getUTCFullYear() + '-W' + String(weekNo).padStart(2,'0');
   }
 
-function buildCapacityStats(allRows, selectedRows){
+  function buildCapacityStats(allRows, selectedRows){
     const dailyMap = new Map();
     const weeklyMap = new Map();
     const selectedDailyMap = new Map();
@@ -699,7 +699,7 @@ function buildCapacityStats(allRows, selectedRows){
       <div class="capacity-status ${status.className}">
         <h2>${status.status}</h2>
         <div class="mt-2">${status.message}</div>
-        <div class="muted mt-2">Required per designer/day: ${requiredPerDesignerDay.toFixed(2)} | Max historical daily output: ${stats.maxDaily.toFixed(2)}</div>
+        <div class="muted mt-2">Required per designer/day: ${requiredPerDesignerDay.toFixed(2)} | Max historical daily output: ${stats.maxDaily.toFixed(2)} | Designer: ${stats.maxDailyRecord.designer} | Date: ${stats.maxDailyRecord.date}</div>
       </div>
     `;
 
@@ -729,7 +729,7 @@ function buildCapacityStats(allRows, selectedRows){
     mainChart.render();
 
     document.getElementById('mainTableTitle').textContent = 'Capacity Calculator Summary';
-renderTable('mainTable', ['Metric','Value'], [
+    renderTable('mainTable', ['Metric','Value'], [
       ['Total Required Designs', fmtNumber(totalRequired)],
       ['Number of Days', fmtNumber(days)],
       ['Number of Designers', fmtNumber(designers)],
@@ -752,7 +752,7 @@ renderTable('mainTable', ['Metric','Value'], [
       ['Decision Status', status.status]
     ]);
 
-document.getElementById('secondTableCard').style.display = 'block';
+    document.getElementById('secondTableCard').style.display = 'block';
     document.getElementById('secondTableTitle').textContent = 'Top 10 Historical Daily Outputs';
     renderTable('secondTable', ['Rank','Designer','Date','Designs'], stats.topDailyRecords.map((item, index) => [
       index + 1,
@@ -760,6 +760,7 @@ document.getElementById('secondTableCard').style.display = 'block';
       item.date,
       fmtNumber(item.value)
     ]));
+  }
 
   function applyReport(){
     const range = getSelectedRange();
