@@ -396,37 +396,81 @@
     return date.getUTCFullYear() + '-W' + String(weekNo).padStart(2,'0');
   }
 
-  function buildCapacityStats(allRows, selectedRows){
+function buildCapacityStats(allRows, selectedRows){
     const dailyMap = new Map();
     const weeklyMap = new Map();
     const selectedDailyMap = new Map();
 
     allRows.forEach(r => {
       if (!r.designer) return;
-      const dayKey = r.designer + '|' + fmtDDMMYYYY_UTC(r.date);
-      const weekKey = r.designer + '|' + weekKeyUTC(r.date);
+
+      const dayLabel = fmtDDMMYYYY_UTC(r.date);
+      const weekLabel = weekKeyUTC(r.date);
+
+      const dayKey = r.designer + '|' + dayLabel;
+      const weekKey = r.designer + '|' + weekLabel;
+
       dailyMap.set(dayKey, (dailyMap.get(dayKey) || 0) + normalizeQty(r.qty));
       weeklyMap.set(weekKey, (weeklyMap.get(weekKey) || 0) + normalizeQty(r.qty));
     });
 
     selectedRows.forEach(r => {
       if (!r.designer) return;
-      const dayKey = r.designer + '|' + fmtDDMMYYYY_UTC(r.date);
+
+      const dayLabel = fmtDDMMYYYY_UTC(r.date);
+      const dayKey = r.designer + '|' + dayLabel;
+
       selectedDailyMap.set(dayKey, (selectedDailyMap.get(dayKey) || 0) + normalizeQty(r.qty));
     });
 
-    const dailyValues = Array.from(dailyMap.values()).filter(v => v > 0);
-    const weeklyValues = Array.from(weeklyMap.values()).filter(v => v > 0);
+    const dailyRecords = Array.from(dailyMap.entries()).map(([key, value]) => {
+      const parts = key.split('|');
+      return {
+        designer: parts[0],
+        date: parts[1],
+        value: value
+      };
+    }).filter(x => x.value > 0);
+
+    const weeklyRecords = Array.from(weeklyMap.entries()).map(([key, value]) => {
+      const parts = key.split('|');
+      return {
+        designer: parts[0],
+        week: parts[1],
+        value: value
+      };
+    }).filter(x => x.value > 0);
+
     const selectedDailyValues = Array.from(selectedDailyMap.values()).filter(v => v > 0);
+
+    const dailyValues = dailyRecords.map(x => x.value);
+    const weeklyValues = weeklyRecords.map(x => x.value);
+
+    const topDailyRecords = dailyRecords
+      .slice()
+      .sort((a,b) => b.value - a.value)
+      .slice(0, 10);
+
+    const topWeeklyRecords = weeklyRecords
+      .slice()
+      .sort((a,b) => b.value - a.value)
+      .slice(0, 10);
+
+    const maxDailyRecord = topDailyRecords.length ? topDailyRecords[0] : { designer:'—', date:'—', value:0 };
+    const maxWeeklyRecord = topWeeklyRecords.length ? topWeeklyRecords[0] : { designer:'—', week:'—', value:0 };
 
     return {
       currentDailyAverage: average(selectedDailyValues),
       averageDaily: average(dailyValues),
       safeDaily: percentile(dailyValues, 90),
-      maxDaily: dailyValues.length ? Math.max(...dailyValues) : 0,
+      maxDaily: maxDailyRecord.value,
+      maxDailyRecord: maxDailyRecord,
+      topDailyRecords: topDailyRecords,
       averageWeekly: average(weeklyValues),
       safeWeekly: percentile(weeklyValues, 90),
-      maxWeekly: weeklyValues.length ? Math.max(...weeklyValues) : 0,
+      maxWeekly: maxWeeklyRecord.value,
+      maxWeeklyRecord: maxWeeklyRecord,
+      topWeeklyRecords: topWeeklyRecords,
       dailySamples: dailyValues.length,
       weeklySamples: weeklyValues.length
     };
@@ -685,7 +729,7 @@
     mainChart.render();
 
     document.getElementById('mainTableTitle').textContent = 'Capacity Calculator Summary';
-    renderTable('mainTable', ['Metric','Value'], [
+renderTable('mainTable', ['Metric','Value'], [
       ['Total Required Designs', fmtNumber(totalRequired)],
       ['Number of Days', fmtNumber(days)],
       ['Number of Designers', fmtNumber(designers)],
@@ -696,23 +740,26 @@
       ['Historical Average Daily Output', stats.averageDaily.toFixed(2)],
       ['Safe Daily Capacity', stats.safeDaily.toFixed(2)],
       ['Max Historical Daily Output', stats.maxDaily.toFixed(2)],
+      ['Max Historical Daily Designer', stats.maxDailyRecord.designer],
+      ['Max Historical Daily Date', stats.maxDailyRecord.date],
       ['Historical Average Weekly Output', stats.averageWeekly.toFixed(2)],
       ['Safe Weekly Capacity', stats.safeWeekly.toFixed(2)],
       ['Max Historical Weekly Output', stats.maxWeekly.toFixed(2)],
+      ['Max Historical Weekly Designer', stats.maxWeeklyRecord.designer],
+      ['Max Historical Week', stats.maxWeeklyRecord.week],
       ['Daily Samples Used', fmtNumber(stats.dailySamples)],
       ['Weekly Samples Used', fmtNumber(stats.weeklySamples)],
       ['Decision Status', status.status]
     ]);
 
-    document.getElementById('secondTableCard').style.display = 'block';
-    document.getElementById('secondTableTitle').textContent = 'Decision Levels';
-    renderTable('secondTable', ['Level','Condition','Meaning'], [
-      ['Normal', 'Required <= Average Daily Output', 'Within normal historical performance'],
-      ['High Load', 'Required > Average and <= Safe Daily Capacity', 'Possible but needs attention'],
-      ['Critical', 'Required > Safe and <= Max Historical Daily Output', 'High risk and close to extreme historical output'],
-      ['Over Capacity', 'Required > Max Historical Daily Output', 'Exceeds what any designer achieved historically in one day']
-    ]);
-  }
+document.getElementById('secondTableCard').style.display = 'block';
+    document.getElementById('secondTableTitle').textContent = 'Top 10 Historical Daily Outputs';
+    renderTable('secondTable', ['Rank','Designer','Date','Designs'], stats.topDailyRecords.map((item, index) => [
+      index + 1,
+      item.designer,
+      item.date,
+      fmtNumber(item.value)
+    ]));
 
   function applyReport(){
     const range = getSelectedRange();
