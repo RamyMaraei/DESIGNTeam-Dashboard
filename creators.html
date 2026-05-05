@@ -210,6 +210,10 @@
       document.getElementById('btnCSV').addEventListener('click',()=>exportCSV(groupData(RAW)));
       document.getElementById('btnXLSX').addEventListener('click',()=>exportXLSX(groupData(RAW)));
 
+      document.querySelectorAll('.yearNow').forEach(el => {
+        el.textContent = new Date().getFullYear();
+      });
+
       const map=groupData(RAW);
       renderTable(map);
       renderChart(map);
